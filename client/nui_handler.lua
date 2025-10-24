@@ -95,6 +95,8 @@ RegisterNUICallback('setGrade', function(data, cb)
     cb({})
 end)
 
+-- PŮVODNÍ CALLBACK PRO VÝBĚR NEJBLIŽŠÍHO HRÁČE (PONECHÁME PRO PŘÍPAD POTŘEBY, ALE JE NEAKTIVNÍ)
+--[[ 
 RegisterNUICallback('hirePlayer', function(data, cb)
     setNui(false)
     Wait(200) 
@@ -108,6 +110,19 @@ RegisterNUICallback('hirePlayer', function(data, cb)
     end
     cb({})
 end)
+]]
+
+-- NOVÝ CALLBACK PRO NAJÍMÁNÍ PODLE ID
+RegisterNUICallback('hirePlayerById', function(data, cb)
+    if data.targetId and data.jobName then
+        -- Přímo voláme serverový event s ID, které zadal uživatel
+        notify("Pokouším se najmout hráče s ID: " .. data.targetId)
+        TriggerServerEvent("aprts_multijob:server:hirePlayer", data.targetId, data.jobName, 0)
+    end
+    -- NUI se už zavřelo na straně JS, takže zde jen potvrdíme callback
+    cb({})
+end)
+
 
 CreateThread(function()
     while true do

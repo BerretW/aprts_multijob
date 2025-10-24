@@ -9,12 +9,12 @@ Employees = {}
 
 function debugPrint(msg)
     if Config.Debug == true then
-        print("^1[SCRIPT]^0 " .. msg)
+        print("^1[Multijob]^0 " .. msg)
     end
 end
 
 function notify(text)
-    TriggerEvent('notifications:notify', "SCRIPT", text, 3000)
+    TriggerEvent('notifications:notify', "Multijob", text, 3000)
 end
 
 function table.count(tbl)

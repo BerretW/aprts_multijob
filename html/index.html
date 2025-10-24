@@ -46,7 +46,7 @@
         </div>
     </div>
 
-    <!-- NOVÉ POTVRZOVACÍ OKNO -->
+    <!-- OKNO PRO POTVRZENÍ (ANO/NE) -->
     <div id="confirm-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <p id="confirm-text">Opravdu si přejete pokračovat?</p>
@@ -57,6 +57,17 @@
         </div>
     </div>
 
+    <!-- NOVÉ OKNO PRO ZADÁNÍ HODNOTY (GRADE) -->
+    <div id="prompt-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <p id="prompt-text">Zadejte novou hodnost:</p>
+            <input type="number" id="prompt-input" min="0" max="100" placeholder="0">
+            <div class="modal-actions">
+                <button id="prompt-submit-btn" class="action-btn">Potvrdit</button>
+                <button id="prompt-cancel-btn" class="action-btn fire-btn">Zrušit</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

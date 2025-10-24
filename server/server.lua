@@ -5,11 +5,11 @@ Jobs = {}
 PlayerNames = {}
 function debugPrint(msg)
     if Config.Debug == true then
-        print("^1[SCRIPT]^0 " .. msg)
+        print("^1[MultiJob]^0 " .. msg)
     end
 end
 function notify(playerId, message)
-    TriggerClientEvent('notifications:notify', playerId, "SCRIPT", message, 4000)
+    TriggerClientEvent('notifications:notify', playerId, "MultiJob", message, 4000)
 end
 
 function table.count(tbl)
@@ -268,10 +268,6 @@ function setPlayerJob(player, targetId, jobName, grade)
     TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId, PlayedJobs[charId])
     return true
 end
-
--- TATO UDÁLOST JE STARÁ A DUPLIKOVANÁ, ZAKOMENTOVÁVÁM JI. POUŽIJEME NOVOU "vorp:playerLoaded"
--- AddEventHandler("vorp:playerJobChange", function(source, newjob, oldjob) ... end)
-
 
 -- ====================================================================================
 -- NOVÁ SEKCE: SYNCHRONIZACE PRÁCE PŘI PŘIHLÁŠENÍ HRÁČE

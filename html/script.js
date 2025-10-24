@@ -1,3 +1,4 @@
+// ... (začátek souboru a modální okna beze změny) ...
 // Helper funkce pro odesílání dat do Lua
 async function post(eventName, data = {}) {
     try {
@@ -28,16 +29,19 @@ function closeNUI() {
 closeButton.addEventListener('click', closeNUI);
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        // Zavřeme modal, pokud je otevřený, jinak zavřeme hlavní okno
         if (!confirmModal.classList.contains('hidden')) {
             hideConfirm();
+        } else if (!promptModal.classList.contains('hidden')) {
+            hidePrompt();
         } else {
             closeNUI();
         }
     }
 });
 
-// ==================== VLASTNÍ POTVRZOVACÍ DIALOG ====================
+// ==================== VLASTNÍ MODÁLNÍ OKNA ====================
+
+// --- CONFIRM (ANO/NE) ---
 const confirmModal = document.getElementById('confirm-modal');
 const confirmText = document.getElementById('confirm-text');
 const confirmYesBtn = document.getElementById('confirm-yes-btn');
@@ -49,20 +53,47 @@ function showConfirm(text, callback) {
     confirmCallback = callback;
     confirmModal.classList.remove('hidden');
 }
-
 function hideConfirm() {
     confirmModal.classList.add('hidden');
     confirmCallback = null;
 }
-
 confirmYesBtn.addEventListener('click', () => {
-    if (confirmCallback) {
-        confirmCallback();
-    }
+    if (confirmCallback) confirmCallback();
     hideConfirm();
 });
-
 confirmNoBtn.addEventListener('click', hideConfirm);
+
+// --- PROMPT (ZADÁNÍ HODNOTY) ---
+const promptModal = document.getElementById('prompt-modal');
+const promptText = document.getElementById('prompt-text');
+const promptInput = document.getElementById('prompt-input');
+const promptSubmitBtn = document.getElementById('prompt-submit-btn');
+const promptCancelBtn = document.getElementById('prompt-cancel-btn');
+let promptCallback = null;
+
+function showPrompt(text, placeholder, callback) {
+    promptText.textContent = text;
+    promptInput.value = '';
+    promptInput.placeholder = placeholder || '';
+    promptCallback = callback;
+    promptModal.classList.remove('hidden');
+    promptInput.focus();
+}
+function hidePrompt() {
+    promptModal.classList.add('hidden');
+    promptCallback = null;
+}
+promptSubmitBtn.addEventListener('click', () => {
+    if (promptCallback) promptCallback(promptInput.value);
+    hidePrompt();
+});
+promptCancelBtn.addEventListener('click', hidePrompt);
+promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        promptSubmitBtn.click();
+    }
+});
+
 
 // ==================== JOB MENU LOGIC ====================
 const myJobsList = document.getElementById('my-jobs-list');
@@ -70,7 +101,6 @@ const currentJobLabel = document.getElementById('current-job-label');
 
 function populateMyJobs(jobs, currentJob, currentJobLbl, currentGrade) {
     myJobsList.innerHTML = '';
-    
     activeJobName = currentJob;
     currentJobLabel.textContent = `${currentJobLbl} (Hodnost: ${currentGrade})`;
 
@@ -81,7 +111,6 @@ function populateMyJobs(jobs, currentJob, currentJobLbl, currentGrade) {
 
     jobs.forEach(job => {
         const isActive = job.name === activeJobName;
-        
         const item = document.createElement('div');
         item.className = 'list-item';
         item.innerHTML = `
@@ -105,17 +134,12 @@ function populateMyJobs(jobs, currentJob, currentJobLbl, currentGrade) {
 
     document.querySelectorAll('.quit-job-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const buttonElement = e.target.closest('.quit-job-btn');
-            const jobNameToQuit = buttonElement.dataset.jobName;
-
+            const jobNameToQuit = e.target.closest('.quit-job-btn').dataset.jobName;
             if (jobNameToQuit) {
-                // Použijeme náš vlastní dialog místo nativního confirm()
                 showConfirm(`Opravdu chcete opustit práci ${jobNameToQuit}?`, () => {
                     post('quitJob', { jobName: jobNameToQuit });
                     closeNUI();
                 });
-            } else {
-                console.error('[CHYBA] Nepodařilo se získat jobName z tlačítka!');
             }
         });
     });
@@ -125,18 +149,8 @@ function populateMyJobs(jobs, currentJob, currentJobLbl, currentGrade) {
 const employeesList = document.getElementById('employees-list');
 let bossJobName = '';
 
-document.querySelectorAll('.tab-button').forEach(button => {
-    button.addEventListener('click', () => {
-        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        
-        const tabId = button.dataset.tab + '-tab';
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-        document.getElementById(tabId).classList.remove('hidden');
-    });
-});
-
 function populateEmployees(employees, jobName) {
+    // Uložíme si jméno práce pro použití v celém boss menu
     bossJobName = jobName;
     employeesList.innerHTML = '';
 
@@ -148,46 +162,50 @@ function populateEmployees(employees, jobName) {
     employees.forEach(emp => {
         const item = document.createElement('div');
         item.className = 'list-item';
-        // Upravíme tlačítko pro propuštění, aby také používalo náš modal
         item.innerHTML = `
             <div class="item-info">
                 <span>${emp.name}</span>
                 <span>Hodnost: ${emp.grade}</span>
             </div>
             <div class="item-actions">
-                <button class="promote-btn" data-charid="${emp.charid}" data-current-grade="${emp.grade}">Povýšit/Degradovat</button>
+                <button class="promote-btn" data-charid="${emp.charid}" data-current-grade="${emp.grade}" data-name="${emp.name}">Povýšit/Degradovat</button>
                 <button class="fire-employee-btn fire-btn" data-charid="${emp.charid}" data-name="${emp.name}">Propustit</button>
             </div>
         `;
         employeesList.appendChild(item);
     });
 
+    attachBossMenuListeners();
+}
+
+function attachBossMenuListeners() {
     document.querySelectorAll('.promote-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const charid = e.target.dataset.charid;
-            const currentGrade = e.target.dataset.currentGrade;
-            // prompt() je také blokován, nahradíme ho v budoucnu, pokud bude třeba. Prozatím necháme.
-            const newGrade = prompt(`Zadejte novou hodnost pro zaměstnance (aktuální: ${currentGrade}):`, currentGrade);
+            const button = e.target.closest('.promote-btn');
+            const charid = button.dataset.charid;
+            const currentGrade = button.dataset.currentGrade;
+            const name = button.dataset.name;
 
-            if (newGrade !== null && !isNaN(newGrade) && newGrade >= 0) {
-                post('setGrade', { 
-                    charid: parseInt(charid), 
-                    newGrade: parseInt(newGrade),
-                    jobName: bossJobName 
-                });
-                closeNUI();
-            } else if (newGrade !== null) {
-                alert('Zadejte prosím platné číslo.');
-            }
+            showPrompt(`Zadejte novou hodnost pro ${name}:`, currentGrade, (newGrade) => {
+                if (newGrade !== null && newGrade !== '' && !isNaN(newGrade) && newGrade >= 0) {
+                    post('setGrade', { 
+                        charid: parseInt(charid), 
+                        newGrade: parseInt(newGrade),
+                        jobName: bossJobName 
+                    });
+                    closeNUI();
+                } else if (newGrade !== null && newGrade !== '') {
+                    console.log('Zadána neplatná hodnota pro grade.');
+                }
+            });
         });
     });
 
-    // Nový listener pro propouštění zaměstnanců
     document.querySelectorAll('.fire-employee-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const buttonElement = e.target.closest('.fire-employee-btn');
-            const charid = buttonElement.dataset.charid;
-            const name = buttonElement.dataset.name;
+            const button = e.target.closest('.fire-employee-btn');
+            const charid = button.dataset.charid;
+            const name = button.dataset.name;
 
             showConfirm(`Opravdu chcete propustit zaměstnance ${name}?`, () => {
                 post('fireEmployee', { 
@@ -201,38 +219,47 @@ function populateEmployees(employees, jobName) {
 }
 
 document.getElementById('hire-player-btn').addEventListener('click', () => {
-    post('hirePlayer', { jobName: bossJobName });
-    closeNUI();
+    // Ujistíme se, že bossJobName není prázdné
+    if (!bossJobName) {
+        console.error("Chyba: Není definována práce pro nábor!");
+        return;
+    }
+    showPrompt("Zadejte Player ID nového zaměstnance:", "Player ID", (playerId) => {
+        const id = parseInt(playerId);
+        if (id && id > 0) {
+            post('hirePlayerById', { 
+                targetId: id,
+                jobName: bossJobName // Použijeme aktuální hodnotu
+            });
+            closeNUI();
+        } else if (playerId !== null && playerId !== '') {
+            console.log("Zadáno neplatné ID hráče.");
+        }
+    });
 });
 
-
-// ==================== MAIN EVENT LISTENER ====================
+// ==================== MAIN EVENT LISTENER & DRAG LOGIC (beze změny) ====================
 window.addEventListener('message', (event) => {
     const data = event.data;
-
     if (data.action === 'openMenu') {
         populateMyJobs(data.jobs, data.currentJob, data.currentJobLabel, data.currentGrade);
-
         const bossSection = document.getElementById('boss-section');
         if (data.isBoss) {
             document.getElementById('boss-panel-title').textContent = `Boss Panel (${data.currentJobLabel})`;
+            // Klíčový krok: Aktualizujeme bossJobName při každém otevření menu
             populateEmployees(data.employees, data.currentJob);
             document.querySelector('.tab-button[data-tab="employees"]').click();
             bossSection.classList.remove('hidden');
         } else {
             bossSection.classList.add('hidden');
         }
-        
         container.classList.remove('hidden');
     }
 });
-
-
-// ==================== DRAGGABLE WINDOW LOGIC ====================
+// ... (zbytek kódu pro přetahování okna je stejný)
 const header = document.getElementById("main-header");
 let isDragging = false;
 let offsetX, offsetY;
-
 header.addEventListener('mousedown', (e) => {
     if (e.target.tagName === 'BUTTON') return;
     isDragging = true;
@@ -244,13 +271,11 @@ header.addEventListener('mousedown', (e) => {
     container.style.top = `${rect.top}px`;
     header.style.cursor = 'grabbing';
 });
-
 document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
     container.style.left = `${e.clientX - offsetX}px`;
     container.style.top = `${e.clientY - offsetY}px`;
 });
-
 document.addEventListener('mouseup', () => {
     isDragging = false;
     header.style.cursor = 'grab';
