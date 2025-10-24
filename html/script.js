@@ -394,7 +394,7 @@ function populateAdminJobs(jobs) {
     adminJobsList.innerHTML = "";
 
     const validJobs = Object.values(jobs).filter(job => job && job.label);
-    const sortedJobs = validJobs.sort((a, b) => a.label.localeCompare(b.label));
+    const sortedJobs = validJobs.sort((a, b) => a.name.localeCompare(b.name));
 
     sortedJobs.forEach(job => {
         const item = document.createElement('div');
