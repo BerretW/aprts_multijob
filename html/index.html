@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Správa Zaměstnání</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="container" class="hidden">
+        <div class="header">
+            <h1 id="menu-title">Správa zaměstnání</h1>
+            <button id="close-button" class="close-btn">X</button>
+        </div>
+        
+        <!-- ================== JOB MENU ================== -->
+        <div id="job-menu" class="menu-content">
+            <p class="current-job-info">Aktivní práce: <span id="current-job-label">Načítání...</span></p>
+            <div id="my-jobs-list" class="list">
+                <!-- Seznam prací bude vygenerován zde -->
+            </div>
+        </div>
+
+        <!-- ================== BOSS MENU ================== -->
+        <div id="boss-menu" class="menu-content hidden">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="employees">Zaměstnanci</button>
+                <button class="tab-button" data-tab="hire">Nábor</button>
+            </div>
+            
+            <div id="employees-tab" class="tab-content">
+                <div id="employees-list" class="list">
+                    <!-- Seznam zaměstnanců bude vygenerován zde -->
+                </div>
+            </div>
+
+            <div id="hire-tab" class="tab-content hidden">
+                 <p>Najměte hráče, který stojí poblíž vás.</p>
+                 <button id="hire-player-btn" class="action-btn">Najmout hráče</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

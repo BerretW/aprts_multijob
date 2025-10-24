@@ -1,3 +1,5 @@
+-- Tento soubor zůstává téměř stejný, jen upravíme obsah příkazů /multijob a /bossmenu
+
 RegisterCommand("listJobs", function(source, args, rawCommand)
     local _source = source
     if _source == 0 then
@@ -11,14 +13,14 @@ RegisterCommand("listJobs", function(source, args, rawCommand)
 end, false)
 
 RegisterCommand("quitJob", function(source, args, rawCommand)
-    local _source = source
-
-    local jobName = LocalPlayer.state.Character.Job
+    local jobName = args[1]
     if jobName then
         TriggerServerEvent("aprts_multijob:server:quitJob", jobName)
+    else
+        notify("Použití: /quitJob [nazev_prace]")
     end
-
 end, false)
+
 
 RegisterCommand("setPlayerJob", function(source, args, rawCommand)
     local _source = source
@@ -38,46 +40,26 @@ RegisterCommand("setPlayerJob", function(source, args, rawCommand)
     end
 end, false)
 
+-- ZMĚNA ZDE
 RegisterCommand("multijob", function(source, args, rawCommand)
-    local _source = source
-
-    if _source then
-        MyJobs = {}
-        TriggerServerEvent("aprts_multijob:server:requestMyJobs")
-        while table.count(MyJobs) == 0 do
-            Wait(100)
-        end
-        OpenJobMenu()
-
-    end
-
+    OpenJobMenu()
 end, false)
 
+-- ZMĚNA ZDE
 RegisterCommand("bossmenu", function(source, args, rawCommand)
-    local _source = source
-
-    if _source then
-        local jobName = LocalPlayer.state.Character.Job
-        local grade = LocalPlayer.state.Character.Grade
-        local boss = false
-        if jobName and Jobs then
-            for k, v in pairs(Jobs) do
-                if v.name == jobName and grade >= v.boss then
-                    boss = true
-                    break
-                end
-            end
+    local jobName = LocalPlayer.state.Character.Job
+    local grade = LocalPlayer.state.Character.Grade
+    local boss = false
+    
+    if jobName and JobsByName[jobName] then
+        if grade >= JobsByName[jobName].boss then
+            boss = true
         end
-        if boss then
-            Employees = {}
-
-            TriggerServerEvent('aprts_multijob:server:getEmployees', JobsByName[jobName] and JobsByName[jobName].id or 0)
-            OpenBossMenu()
-        else
-            print("You are not a boss of your job.")
-            notify("Nejste šéfem své práce.")
-        end
-
     end
 
+    if boss then
+        OpenBossMenu()
+    else
+        notify("Nejste šéfem své aktuální práce nebo pro ni není nastaven boss grade.")
+    end
 end, false)

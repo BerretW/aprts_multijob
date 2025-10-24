@@ -1,0 +1,177 @@
+/* Import fontu pro RedM styl */
+@import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
+
+body {
+    font-family: 'Uncial Antiqua', cursive;
+    background-color: transparent;
+    color: #f0e6d2;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-height: 80vh;
+    background-image: url('https://i.imgur.com/gK2x3iY.jpg'); /* Textura dřeva */
+    background-size: cover;
+    border: 3px solid #4a2c1a;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #6b462f;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+    text-shadow: 2px 2px 4px #000;
+}
+
+.close-btn {
+    background: #8b0000;
+    color: #f0e6d2;
+    border: 2px solid #4a2c1a;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+    background: #a52a2a;
+}
+
+.list {
+    overflow-y: auto;
+    max-height: 50vh;
+    padding-right: 10px; /* pro scrollbar */
+}
+
+/* Scrollbar styling */
+.list::-webkit-scrollbar {
+    width: 8px;
+}
+.list::-webkit-scrollbar-track {
+    background: #4a2c1a;
+    border-radius: 4px;
+}
+.list::-webkit-scrollbar-thumb {
+    background: #855d44;
+    border-radius: 4px;
+}
+.list::-webkit-scrollbar-thumb:hover {
+    background: #a17b62;
+}
+
+.list-item {
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid #6b462f;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-info {
+    flex-grow: 1;
+}
+
+.item-info span {
+    font-weight: bold;
+    display: block;
+}
+
+.item-actions button {
+    margin-left: 8px;
+    padding: 6px 12px;
+    border: 1px solid #855d44;
+    background-color: #6b462f;
+    color: #f0e6d2;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.item-actions button:hover {
+    background-color: #855d44;
+}
+
+.item-actions button.fire-btn {
+    background-color: #8b0000;
+}
+.item-actions button.fire-btn:hover {
+    background-color: #a52a2a;
+}
+
+.current-job-info {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+/* --- BOSS MENU --- */
+.tabs {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #6b462f;
+    background: #4a2c1a;
+    color: #c5b8a3;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 16px;
+}
+
+.tab-button.active {
+    background: #6b462f;
+    color: #f0e6d2;
+    border-bottom: 1px solid #6b462f;
+}
+
+#hire-tab {
+    text-align: center;
+    padding: 20px;
+}
+
+#hire-player-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: 1px solid #855d44;
+    background-color: #6b462f;
+    color: #f0e6d2;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    margin-top: 15px;
+}
+
+#hire-player-btn:hover {
+    background-color: #855d44;
+}
