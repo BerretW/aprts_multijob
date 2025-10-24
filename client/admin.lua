@@ -54,7 +54,14 @@ end)
 
 -- Tento event zavře NUI a obnoví data po úspěšné akci na serveru
 RegisterNetEvent("aprts_multijob:client:adminActionSuccess", function()
-    setAdminNui(false)
+    -- NEBUDEME volat setAdminNui(false) přímo.
+    -- Místo toho pošleme zprávu do JavaScriptu, aby zavřel panel.
+    SendNUIMessage({
+        action = "forceCloseAdminPanel"
+    })
+    -- Funkce setAdminNui(false) se zavolá až v NUI callbacku 'admin:close',
+    -- který JavaScript pošle zpět po úspěšném zavření okna.
+    -- Tím je zajištěn správný a konzistentní postup zavírání.
 end)
 
 

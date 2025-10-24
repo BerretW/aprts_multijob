@@ -28,23 +28,23 @@ function closeNUI() {
 closeButton.addEventListener("click", closeNUI);
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-        if (!assignJobModal.classList.contains('hidden')) {
-            closeAssignJobModal();
-        } else if (!jobModal.classList.contains('hidden')) {
-            closeJobModal();
-        } else if (!confirmModal.classList.contains("hidden")) {
-            hideConfirm();
-        } else if (!promptModal.classList.contains("hidden")) {
-            hidePrompt();
-        } else if (!hireModal.classList.contains("hidden")) {
-            hideHireModal();
-        } else if (!adminContainer.classList.contains('hidden')) {
-            closeAdminPanel();
-        } else if (!container.classList.contains('hidden')) {
-            closeNUI();
-        }
+  if (e.key === "Escape") {
+    if (!assignJobModal.classList.contains("hidden")) {
+      closeAssignJobModal();
+    } else if (!jobModal.classList.contains("hidden")) {
+      closeJobModal();
+    } else if (!confirmModal.classList.contains("hidden")) {
+      hideConfirm();
+    } else if (!promptModal.classList.contains("hidden")) {
+      hidePrompt();
+    } else if (!hireModal.classList.contains("hidden")) {
+      hideHireModal();
+    } else if (!adminContainer.classList.contains("hidden")) {
+      closeAdminPanel();
+    } else if (!container.classList.contains("hidden")) {
+      closeNUI();
     }
+  }
 });
 
 // ==================== VLASTNÍ MODÁLNÍ OKNA ====================
@@ -324,6 +324,13 @@ window.addEventListener("message", (event) => {
     container.classList.remove("hidden");
   } else if (data.action === "openAdminPanel") {
     openAdminPanel(data.jobs);
+  } // === PŘIDEJTE TENTO BLOK ===
+  else if (data.action === "forceCloseAdminPanel") {
+    // Pokud je admin panel otevřený, zavoláme funkci pro jeho zavření
+    if (!adminContainer.classList.contains("hidden")) {
+      closeAdminPanel();
+    }
+    // ============================
   }
 });
 
@@ -359,9 +366,9 @@ const adminContainer = document.getElementById("admin-container");
 const adminCloseButton = document.getElementById("admin-close-button");
 const adminJobsList = document.getElementById("admin-jobs-list");
 const createJobBtn = document.getElementById("create-job-btn");
-const adminSearchInput = document.getElementById("admin-search-input"); 
+const adminSearchInput = document.getElementById("admin-search-input");
 
-let allAdminJobs = []; 
+let allAdminJobs = [];
 
 // Modal pro editaci/vytvoření práce
 const jobModal = document.getElementById("job-modal");
@@ -374,23 +381,22 @@ const jobSaveBtn = document.getElementById("job-save-btn");
 const jobCancelBtn = document.getElementById("job-cancel-btn");
 
 // ... (zbytek proměnných zůstává stejný) ...
-const assignJobModal = document.getElementById('assign-job-modal');
-const assignJobIdInput = document.getElementById('assign-job-id-input');
-const assignJobLabel = document.getElementById('assign-job-label');
-const assignPlayerIdInput = document.getElementById('assign-player-id-input');
-const assignGradeInput = document.getElementById('assign-grade-input');
-const assignJobSaveBtn = document.getElementById('assign-job-save-btn');
-const assignJobCancelBtn = document.getElementById('assign-job-cancel-btn');
-
+const assignJobModal = document.getElementById("assign-job-modal");
+const assignJobIdInput = document.getElementById("assign-job-id-input");
+const assignJobLabel = document.getElementById("assign-job-label");
+const assignPlayerIdInput = document.getElementById("assign-player-id-input");
+const assignGradeInput = document.getElementById("assign-grade-input");
+const assignJobSaveBtn = document.getElementById("assign-job-save-btn");
+const assignJobCancelBtn = document.getElementById("assign-job-cancel-btn");
 
 function openAdminPanel(jobs) {
-    allAdminJobs = Object.values(jobs)
-        .filter(job => job && job.label)
-        .sort((a, b) => a.name.localeCompare(b.name));
-    
-    populateAdminJobs(allAdminJobs); 
-    adminSearchInput.value = ''; 
-    adminContainer.classList.remove("hidden");
+  allAdminJobs = Object.values(jobs)
+    .filter((job) => job && job.label)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  populateAdminJobs(allAdminJobs);
+  adminSearchInput.value = "";
+  adminContainer.classList.remove("hidden");
 }
 
 function closeAdminPanel() {
@@ -398,37 +404,41 @@ function closeAdminPanel() {
   post("admin:close");
 }
 
-adminSearchInput.addEventListener('input', () => {
-    const searchTerm = adminSearchInput.value.toLowerCase().trim();
-    
-    if (searchTerm === '') {
-        populateAdminJobs(allAdminJobs); 
-        return;
-    }
+adminSearchInput.addEventListener("input", () => {
+  const searchTerm = adminSearchInput.value.toLowerCase().trim();
 
-    const filteredJobs = allAdminJobs.filter(job => {
-        const jobId = String(job.id).toLowerCase();
-        const jobLabel = job.label.toLowerCase();
-        const jobName = job.name.toLowerCase();
-        
-        return jobId.includes(searchTerm) || jobLabel.includes(searchTerm) || jobName.includes(searchTerm);
-    });
+  if (searchTerm === "") {
+    populateAdminJobs(allAdminJobs);
+    return;
+  }
 
-    populateAdminJobs(filteredJobs);
+  const filteredJobs = allAdminJobs.filter((job) => {
+    const jobId = String(job.id).toLowerCase();
+    const jobLabel = job.label.toLowerCase();
+    const jobName = job.name.toLowerCase();
+
+    return (
+      jobId.includes(searchTerm) ||
+      jobLabel.includes(searchTerm) ||
+      jobName.includes(searchTerm)
+    );
+  });
+
+  populateAdminJobs(filteredJobs);
 });
 
 function populateAdminJobs(jobsToDisplay) {
-    adminJobsList.innerHTML = "";
+  adminJobsList.innerHTML = "";
 
-    if (jobsToDisplay.length === 0) {
-        adminJobsList.innerHTML = `<p style="text-align: center; margin-top: 20px;">Žádné práce neodpovídají hledání.</p>`;
-        return;
-    }
+  if (jobsToDisplay.length === 0) {
+    adminJobsList.innerHTML = `<p style="text-align: center; margin-top: 20px;">Žádné práce neodpovídají hledání.</p>`;
+    return;
+  }
 
-    jobsToDisplay.forEach(job => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        item.innerHTML = `
+  jobsToDisplay.forEach((job) => {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    item.innerHTML = `
             <div class="item-info">
                 <span><strong>ID:</strong> ${job.id}</span>
                 <span><strong>Popisek:</strong> ${job.label}</span>
@@ -442,43 +452,46 @@ function populateAdminJobs(jobsToDisplay) {
                 <button class="delete-job-btn" data-job-id="${job.id}" data-job-label="${job.label}">Smazat</button>
             </div>
         `;
-        adminJobsList.appendChild(item);
-    });
-    
-    attachAdminListeners();
+    adminJobsList.appendChild(item);
+  });
+
+  attachAdminListeners();
 }
 
 function attachAdminListeners() {
-    document.querySelectorAll('.assign-job-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.dataset.jobId;
-            const jobData = allAdminJobs.find(j => j.id == id);
-            if (jobData) {
-                openAssignJobModal(jobData);
-            }
-        });
+  document.querySelectorAll(".assign-job-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = e.target.dataset.jobId;
+      const jobData = allAdminJobs.find((j) => j.id == id);
+      if (jobData) {
+        openAssignJobModal(jobData);
+      }
     });
+  });
 
-    document.querySelectorAll('.edit-job-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.dataset.jobId;
-            const jobData = allAdminJobs.find(j => j.id == id);
-            if (jobData) {
-                openJobModal(jobData);
-            }
-        });
+  document.querySelectorAll(".edit-job-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = e.target.dataset.jobId;
+      const jobData = allAdminJobs.find((j) => j.id == id);
+      if (jobData) {
+        openJobModal(jobData);
+      }
     });
+  });
 
-    document.querySelectorAll('.delete-job-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.dataset.jobId;
-            const label = e.target.dataset.jobLabel;
-            
-            showConfirm(`Opravdu chcete trvale smazat práci "${label}"? Tato akce je nevratná a odebere práci všem hráčům!`, () => {
-                post('admin:deleteJob', { id: parseInt(id) });
-            });
-        });
+  document.querySelectorAll(".delete-job-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = e.target.dataset.jobId;
+      const label = e.target.dataset.jobLabel;
+
+      showConfirm(
+        `Opravdu chcete trvale smazat práci "${label}"? Tato akce je nevratná a odebere práci všem hráčům!`,
+        () => {
+          post("admin:deleteJob", { id: parseInt(id) });
+        }
+      );
     });
+  });
 }
 
 // === ZDE JE ZMĚNA ===
@@ -490,10 +503,9 @@ function openJobModal(jobData = null) {
     jobNameInput.value = jobData.name;
     jobLabelInput.value = jobData.label;
     jobBossInput.value = jobData.boss;
-    
+
     // ZMĚNA ZDE: Zakážeme pole s interním názvem
     jobNameInput.disabled = true;
-
   } else {
     // Vytvoření
     jobModalTitle.textContent = "Vytvořit Novou Práci";
@@ -514,16 +526,16 @@ function closeJobModal() {
 }
 
 function openAssignJobModal(jobData) {
-    assignJobIdInput.value = jobData.id;
-    assignJobLabel.textContent = jobData.label;
-    assignPlayerIdInput.value = '';
-    assignGradeInput.value = 0;
-    assignJobModal.classList.remove('hidden');
-    assignPlayerIdInput.focus();
+  assignJobIdInput.value = jobData.id;
+  assignJobLabel.textContent = jobData.label;
+  assignPlayerIdInput.value = "";
+  assignGradeInput.value = 0;
+  assignJobModal.classList.remove("hidden");
+  assignPlayerIdInput.focus();
 }
 
 function closeAssignJobModal() {
-    assignJobModal.classList.add('hidden');
+  assignJobModal.classList.add("hidden");
 }
 
 // Listenery pro admin panel
@@ -554,20 +566,20 @@ jobSaveBtn.addEventListener("click", () => {
   closeJobModal();
 });
 
-assignJobCancelBtn.addEventListener('click', closeAssignJobModal);
+assignJobCancelBtn.addEventListener("click", closeAssignJobModal);
 
-assignJobSaveBtn.addEventListener('click', () => {
-    const data = {
-        jobId: parseInt(assignJobIdInput.value),
-        targetId: parseInt(assignPlayerIdInput.value),
-        grade: parseInt(assignGradeInput.value)
-    };
+assignJobSaveBtn.addEventListener("click", () => {
+  const data = {
+    jobId: parseInt(assignJobIdInput.value),
+    targetId: parseInt(assignPlayerIdInput.value),
+    grade: parseInt(assignGradeInput.value),
+  };
 
-    if (!data.targetId || data.targetId <= 0) {
-        console.error("Zadejte platné Player ID!");
-        return;
-    }
+  if (!data.targetId || data.targetId <= 0) {
+    console.error("Zadejte platné Player ID!");
+    return;
+  }
 
-    post('admin:assignJob', data);
-    closeAssignJobModal();
+  post("admin:assignJob", data);
+  closeAssignJobModal();
 });
