@@ -6,7 +6,7 @@
     <title>Správa Zaměstnání</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin_style.css"> <!-- PŘIDÁNO -->
-    <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet"> -->
 </head>
 <body>
     <!-- Hlavní menu pro hráče -->
@@ -120,6 +120,28 @@
         </div>
     </div>
 
+     <!-- Modální okno pro přiřazení práce hráči -->
+    <div id="assign-job-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h2 id="assign-job-modal-title">Přiřadit Práci</h2>
+            <p>Přiřazujete práci: <strong id="assign-job-label"></strong></p>
+            <input type="hidden" id="assign-job-id-input">
+            
+            <div class="form-group">
+                <label for="assign-player-id-input">Player ID</label>
+                <input type="number" id="assign-player-id-input" min="1" placeholder="Zadejte ID hráče">
+            </div>
+            <div class="form-group">
+                <label for="assign-grade-input">Hodnost (Grade)</label>
+                <input type="number" id="assign-grade-input" min="0" value="0">
+            </div>
+            
+            <div class="modal-actions">
+                <button id="assign-job-save-btn" class="action-btn">Přiřadit</button>
+                <button id="assign-job-cancel-btn" class="action-btn fire-btn">Zrušit</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

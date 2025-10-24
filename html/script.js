@@ -26,10 +26,12 @@ function closeNUI() {
 }
 
 closeButton.addEventListener("click", closeNUI);
+
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-        // Zavírání modálních oken má přednost
-        if (!jobModal.classList.contains('hidden')) {
+        if (!assignJobModal.classList.contains('hidden')) {
+            closeAssignJobModal();
+        } else if (!jobModal.classList.contains('hidden')) {
             closeJobModal();
         } else if (!confirmModal.classList.contains("hidden")) {
             hideConfirm();
@@ -37,9 +39,7 @@ document.addEventListener("keydown", (e) => {
             hidePrompt();
         } else if (!hireModal.classList.contains("hidden")) {
             hideHireModal();
-        } 
-        // Poté zavírání hlavních oken
-        else if (!adminContainer.classList.contains('hidden')) {
+        } else if (!adminContainer.classList.contains('hidden')) {
             closeAdminPanel();
         } else if (!container.classList.contains('hidden')) {
             closeNUI();
@@ -102,9 +102,7 @@ promptInput.addEventListener("keydown", (e) => {
   }
 });
 
-// ==========================================================
-// === NOVÁ SEKCE: HIRE (ZADÁNÍ ID HRÁČE) ===
-// ==========================================================
+// --- HIRE (ZADÁNÍ ID HRÁČE) ---
 const hireModal = document.getElementById("hire-modal");
 const hireInput = document.getElementById("hire-input");
 const hireSubmitBtn = document.getElementById("hire-submit-btn");
@@ -138,7 +136,7 @@ const currentJobLabel = document.getElementById("current-job-label");
 
 function populateMyJobs(jobs, currentJob, currentJobLbl, currentGrade) {
   myJobsList.innerHTML = "";
-  activeJobName = currentJob;
+  let activeJobName = currentJob;
   currentJobLabel.textContent = `${currentJobLbl} (Hodnost: ${currentGrade})`;
 
   if (!jobs || jobs.length === 0) {
@@ -267,13 +265,11 @@ function attachBossMenuListeners() {
   });
 }
 
-// ZMĚNA ZDE: Tlačítko nyní volá naši novou funkci showHireModal
 document.getElementById("hire-player-btn").addEventListener("click", () => {
   if (!bossJobName) {
     console.error("Chyba: Není definována práce pro nábor!");
     return;
   }
-  // Voláme nové, dedikované modální okno
   showHireModal((playerId) => {
     const id = parseInt(playerId);
     if (id && id > 0) {
@@ -289,7 +285,6 @@ document.getElementById("hire-player-btn").addEventListener("click", () => {
 });
 
 // ==================== MAIN EVENT LISTENER & DRAG LOGIC ====================
-// ... (tato část zůstává beze změny) ...
 window.addEventListener("message", (event) => {
   const data = event.data;
   if (data.action === "openMenu") {
@@ -327,8 +322,7 @@ window.addEventListener("message", (event) => {
       bossSection.classList.add("hidden");
     }
     container.classList.remove("hidden");
-  }
-  if (data.action === "openAdminPanel") {
+  } else if (data.action === "openAdminPanel") {
     openAdminPanel(data.jobs);
   }
 });
@@ -376,6 +370,16 @@ const jobBossInput = document.getElementById("job-boss-input");
 const jobSaveBtn = document.getElementById("job-save-btn");
 const jobCancelBtn = document.getElementById("job-cancel-btn");
 
+// Modal pro přiřazení práce
+const assignJobModal = document.getElementById('assign-job-modal');
+const assignJobIdInput = document.getElementById('assign-job-id-input');
+const assignJobLabel = document.getElementById('assign-job-label');
+const assignPlayerIdInput = document.getElementById('assign-player-id-input');
+const assignGradeInput = document.getElementById('assign-grade-input');
+const assignJobSaveBtn = document.getElementById('assign-job-save-btn');
+const assignJobCancelBtn = document.getElementById('assign-job-cancel-btn');
+
+
 function openAdminPanel(jobs) {
   populateAdminJobs(jobs);
   adminContainer.classList.remove("hidden");
@@ -386,7 +390,6 @@ function closeAdminPanel() {
   post("admin:close");
 }
 
-// Najděte funkci populateAdminJobs a nahraďte ji celou
 function populateAdminJobs(jobs) {
     adminJobsList.innerHTML = "";
 
@@ -396,7 +399,6 @@ function populateAdminJobs(jobs) {
     sortedJobs.forEach(job => {
         const item = document.createElement('div');
         item.className = 'list-item';
-        // Přidán počet zaměstnanců a tlačítko Smazat
         item.innerHTML = `
             <div class="item-info">
                 <span><strong>ID:</strong> ${job.id}</span>
@@ -406,6 +408,7 @@ function populateAdminJobs(jobs) {
                 <span><strong>Zaměstnanci:</strong> ${job.employeeCount}</span>
             </div>
             <div class="item-actions">
+                <button class="assign-job-btn" data-job-id="${job.id}">Přiřadit</button>
                 <button class="edit-job-btn" data-job-id="${job.id}">Editovat</button>
                 <button class="delete-job-btn" data-job-id="${job.id}" data-job-label="${job.label}">Smazat</button>
             </div>
@@ -413,7 +416,18 @@ function populateAdminJobs(jobs) {
         adminJobsList.appendChild(item);
     });
 
-    // Přidáme listenery na nově vytvořená tlačítka
+    // Listener pro PŘIŘAZENÍ práce
+    document.querySelectorAll('.assign-job-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.target.dataset.jobId;
+            const jobData = sortedJobs.find(j => j.id == id);
+            if (jobData) {
+                openAssignJobModal(jobData);
+            }
+        });
+    });
+
+    // Listener pro EDITACI práce
     document.querySelectorAll('.edit-job-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.dataset.jobId;
@@ -424,13 +438,12 @@ function populateAdminJobs(jobs) {
         });
     });
 
-    // NOVÝ listener pro tlačítko Smazat
+    // Listener pro SMAZÁNÍ práce
     document.querySelectorAll('.delete-job-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.dataset.jobId;
             const label = e.target.dataset.jobLabel;
             
-            // Použijeme existující potvrzovací okno
             showConfirm(`Opravdu chcete trvale smazat práci "${label}"? Tato akce je nevratná a odebere práci všem hráčům!`, () => {
                 post('admin:deleteJob', { id: parseInt(id) });
             });
@@ -461,6 +474,19 @@ function closeJobModal() {
   jobModal.classList.add("hidden");
 }
 
+function openAssignJobModal(jobData) {
+    assignJobIdInput.value = jobData.id;
+    assignJobLabel.textContent = jobData.label;
+    assignPlayerIdInput.value = '';
+    assignGradeInput.value = 0;
+    assignJobModal.classList.remove('hidden');
+    assignPlayerIdInput.focus();
+}
+
+function closeAssignJobModal() {
+    assignJobModal.classList.add('hidden');
+}
+
 // Listenery pro admin panel
 adminCloseButton.addEventListener("click", closeAdminPanel);
 createJobBtn.addEventListener("click", () => openJobModal());
@@ -487,4 +513,22 @@ jobSaveBtn.addEventListener("click", () => {
     post("admin:createJob", job);
   }
   closeJobModal();
+});
+
+assignJobCancelBtn.addEventListener('click', closeAssignJobModal);
+
+assignJobSaveBtn.addEventListener('click', () => {
+    const data = {
+        jobId: parseInt(assignJobIdInput.value),
+        targetId: parseInt(assignPlayerIdInput.value),
+        grade: parseInt(assignGradeInput.value)
+    };
+
+    if (!data.targetId || data.targetId <= 0) {
+        console.error("Zadejte platné Player ID!");
+        return;
+    }
+
+    post('admin:assignJob', data);
+    closeAssignJobModal();
 });

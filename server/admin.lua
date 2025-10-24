@@ -193,3 +193,75 @@ AddEventHandler('aprts_multijob:server:deleteJob', function(jobId)
     -- Zavřeme admin panel
     TriggerClientEvent('aprts_multijob:client:adminActionSuccess', player)
 end)
+
+
+RegisterServerEvent('aprts_multijob:server:assignJobToPlayer')
+AddEventHandler('aprts_multijob:server:assignJobToPlayer', function(data)
+    local player = source
+    local user = Core.getUser(player)
+
+    if not user then return end
+
+    local targetId = tonumber(data.targetId)
+    local jobId = tonumber(data.jobId)
+    local grade = tonumber(data.grade)
+
+    -- Základní validace
+    if not targetId or not jobId or not grade or grade < 0 then
+        notify(player, "Neplatné údaje. Zkontrolujte ID hráče, ID práce a hodnost.")
+        return
+    end
+
+    local targetUser = Core.getUser(targetId)
+    if not targetUser then
+        notify(player, "Hráč s ID " .. targetId .. " není online.")
+        return
+    end
+
+    if not Jobs[jobId] then
+        notify(player, "Práce s ID " .. jobId .. " neexistuje.")
+        return
+    end
+    
+    local jobName = Jobs[jobId].name
+    local targetCharId = Player(targetId).state.Character.CharId
+
+    -- Kontrola, zda hráč může mít další práci
+    if getNumOfPlayerJobs(targetId) >= Config.MaxJobs then
+        notify(player, "Hráč '" .. GetPlayerName(targetId) .. "' již má maximální počet prací.")
+        notify(targetId, "Admin se vám pokusil přiřadit práci, ale máte plný počet zaměstnání.")
+        return
+    end
+
+    -- Kontrola, zda hráč již práci nemá
+    if not PlayedJobs[targetCharId] then
+        PlayedJobs[targetCharId] = {}
+    end
+    for _, existingJob in ipairs(PlayedJobs[targetCharId]) do
+        if existingJob.job == jobId then
+            notify(player, "Hráč '" .. GetPlayerName(targetId) .. "' již tuto práci má.")
+            return
+        end
+    end
+
+    -- Všechny kontroly prošly, přiřadíme práci
+    table.insert(PlayedJobs[targetCharId], {
+        charid = targetCharId,
+        job = jobId,
+        grade = grade,
+        name = Jobs[jobId].name,
+        label = Jobs[jobId].label
+    })
+
+    MySQL:execute("INSERT INTO aprts_jobs_users (charid, job, grade) VALUES (@charid, @job, @grade)", {
+        ['@charid'] = targetCharId,
+        ['@job'] = jobId,
+        ['@grade'] = grade
+    }, function()
+        notify(player, "Úspěšně jste přiřadili práci '" .. Jobs[jobId].label .. "' hráči '" .. GetPlayerName(targetId) .. "'.")
+        notify(targetId, "Admin vám přiřadil práci: " .. Jobs[jobId].label .. " s hodností " .. grade .. ".")
+        
+        -- Aktualizujeme data u cílového hráče
+        TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId, PlayedJobs[targetCharId])
+    end)
+end)

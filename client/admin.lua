@@ -46,6 +46,12 @@ RegisterNUICallback('admin:deleteJob', function(data, cb)
     cb({})
 end)
 
+RegisterNUICallback('admin:assignJob', function(data, cb)
+    TriggerServerEvent("aprts_multijob:server:assignJobToPlayer", data)
+    cb({})
+end)
+
+
 -- Tento event zavře NUI a obnoví data po úspěšné akci na serveru
 RegisterNetEvent("aprts_multijob:client:adminActionSuccess", function()
     setAdminNui(false)
