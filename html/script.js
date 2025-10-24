@@ -27,18 +27,24 @@ function closeNUI() {
 
 closeButton.addEventListener("click", closeNUI);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    if (!confirmModal.classList.contains("hidden")) {
-      hideConfirm();
-    } else if (!promptModal.classList.contains("hidden")) {
-      hidePrompt();
-    } else if (!hireModal.classList.contains("hidden")) {
-      // <-- PŘIDÁNO
-      hideHireModal();
-    } else {
-      closeNUI();
+    if (e.key === "Escape") {
+        // Zavírání modálních oken má přednost
+        if (!jobModal.classList.contains('hidden')) {
+            closeJobModal();
+        } else if (!confirmModal.classList.contains("hidden")) {
+            hideConfirm();
+        } else if (!promptModal.classList.contains("hidden")) {
+            hidePrompt();
+        } else if (!hireModal.classList.contains("hidden")) {
+            hideHireModal();
+        } 
+        // Poté zavírání hlavních oken
+        else if (!adminContainer.classList.contains('hidden')) {
+            closeAdminPanel();
+        } else if (!container.classList.contains('hidden')) {
+            closeNUI();
+        }
     }
-  }
 });
 
 // ==================== VLASTNÍ MODÁLNÍ OKNA ====================
@@ -380,41 +386,56 @@ function closeAdminPanel() {
   post("admin:close");
 }
 
+// Najděte funkci populateAdminJobs a nahraďte ji celou
 function populateAdminJobs(jobs) {
-  adminJobsList.innerHTML = "";
+    adminJobsList.innerHTML = "";
 
-  // Vytvoříme pole z objektu a seřadíme ho podle labelu
-  const sortedJobs = Object.values(jobs).sort((a, b) =>
-    a.label.localeCompare(b.label)
-  );
+    const validJobs = Object.values(jobs).filter(job => job && job.label);
+    const sortedJobs = validJobs.sort((a, b) => a.label.localeCompare(b.label));
 
-  sortedJobs.forEach((job) => {
-    const item = document.createElement("div");
-    item.className = "list-item";
-    item.innerHTML = `
+    sortedJobs.forEach(job => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        // Přidán počet zaměstnanců a tlačítko Smazat
+        item.innerHTML = `
             <div class="item-info">
                 <span><strong>ID:</strong> ${job.id}</span>
-                <span><strong>Název:</strong> ${job.name}</span>
                 <span><strong>Popisek:</strong> ${job.label}</span>
+                <span><strong>Název:</strong> ${job.name}</span>
                 <span><strong>Boss Grade:</strong> ${job.boss}</span>
+                <span><strong>Zaměstnanci:</strong> ${job.employeeCount}</span>
             </div>
             <div class="item-actions">
                 <button class="edit-job-btn" data-job-id="${job.id}">Editovat</button>
+                <button class="delete-job-btn" data-job-id="${job.id}" data-job-label="${job.label}">Smazat</button>
             </div>
         `;
-    adminJobsList.appendChild(item);
-  });
-
-  // Přidáme listenery na nově vytvořená tlačítka
-  document.querySelectorAll(".edit-job-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const id = e.target.dataset.jobId;
-      const jobData = sortedJobs.find((j) => j.id == id);
-      if (jobData) {
-        openJobModal(jobData);
-      }
+        adminJobsList.appendChild(item);
     });
-  });
+
+    // Přidáme listenery na nově vytvořená tlačítka
+    document.querySelectorAll('.edit-job-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.target.dataset.jobId;
+            const jobData = sortedJobs.find(j => j.id == id);
+            if (jobData) {
+                openJobModal(jobData);
+            }
+        });
+    });
+
+    // NOVÝ listener pro tlačítko Smazat
+    document.querySelectorAll('.delete-job-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.target.dataset.jobId;
+            const label = e.target.dataset.jobLabel;
+            
+            // Použijeme existující potvrzovací okno
+            showConfirm(`Opravdu chcete trvale smazat práci "${label}"? Tato akce je nevratná a odebere práci všem hráčům!`, () => {
+                post('admin:deleteJob', { id: parseInt(id) });
+            });
+        });
+    });
 }
 
 function openJobModal(jobData = null) {

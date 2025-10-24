@@ -7,6 +7,10 @@ end
 
 RegisterCommand("multijobadmin", function()
     -- Požádáme server, aby ověřil, jestli jsme admin
+    if LocalPlayer.state.Character.Group ~= Config.AdminGroup then
+        notify("~r~Nemáte oprávnění pro přístup k tomuto panelu.")
+        return
+    end
     TriggerServerEvent("aprts_multijob:server:requestAdminPanel")
 end, false)
 
@@ -36,10 +40,18 @@ RegisterNUICallback('admin:editJob', function(data, cb)
     cb({})
 end)
 
+-- Přidejte do client/admin.lua mezi ostatní NUI callbacky
+RegisterNUICallback('admin:deleteJob', function(data, cb)
+    TriggerServerEvent("aprts_multijob:server:deleteJob", data.id)
+    cb({})
+end)
+
 -- Tento event zavře NUI a obnoví data po úspěšné akci na serveru
 RegisterNetEvent("aprts_multijob:client:adminActionSuccess", function()
     setAdminNui(false)
 end)
+
+
 
 CreateThread(function()
     while true do

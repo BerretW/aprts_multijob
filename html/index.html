@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Hlavní menu pro hráče -->
     <div id="container" class="hidden">
         <div class="header" id="main-header">
             <h1 id="menu-title">Správa zaměstnání</h1>
@@ -16,16 +17,13 @@
         </div>
         
         <div id="menu-content">
-            <!-- Vždy viditelná část pro správu vlastních prací -->
             <p class="current-job-info">Aktivní práce: <span id="current-job-label">Načítání...</span></p>
             <div id="my-jobs-list" class="list">
                 <!-- Seznam prací bude vygenerován zde -->
             </div>
 
-            <!-- Oddělovač -->
             <hr class="separator">
 
-            <!-- Sekce pro Bossa - defaultně skrytá -->
             <div id="boss-section" class="hidden">
                 <h2 id="boss-panel-title">Boss Panel</h2>
                 <div class="tabs">
@@ -40,7 +38,6 @@
                 </div>
 
                 <div id="hire-tab" class="tab-content hidden">
-                     <!-- ZMĚNA TEXTU ZDE -->
                      <p>Zadejte ID hráče, kterého chcete najmout.</p>
                      <button id="hire-player-btn" class="action-btn">Najmout hráče</button>
                 </div>
@@ -48,7 +45,7 @@
         </div>
     </div>
 
-    <!-- OKNO PRO POTVRZENÍ (ANO/NE) -->
+    <!-- Modální okna pro hráče -->
     <div id="confirm-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <p id="confirm-text">Opravdu si přejete pokračovat?</p>
@@ -59,7 +56,6 @@
         </div>
     </div>
 
-    <!-- OKNO PRO ZADÁNÍ HODNOTY (GRADE) -->
     <div id="prompt-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <p id="prompt-text">Zadejte novou hodnost:</p>
@@ -82,10 +78,26 @@
         </div>
     </div>
 
- <div id="job-modal" class="modal-backdrop hidden">
+    <!-- ============================================= -->
+    <!-- === NOVÁ SEKCE: ADMIN PANEL === -->
+    <!-- ============================================= -->
+    <div id="admin-container" class="hidden">
+        <div class="header" id="admin-header">
+            <h1>Admin Panel - Správa Prací</h1>
+            <button id="admin-close-button" class="close-btn">X</button>
+        </div>
+        
+        <button id="create-job-btn" class="action-btn">Vytvořit novou práci</button>
+        
+        <div id="admin-jobs-list" class="list">
+            <!-- Seznam prací pro admina bude generován zde -->
+        </div>
+    </div>
+
+    <!-- Modální okno pro editaci/vytvoření práce -->
+    <div id="job-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h2 id="job-modal-title">Editovat Práci</h2>
-            <!-- Skrytý input pro ID práce -->
             <input type="hidden" id="job-id-input">
             
             <div class="form-group">
@@ -107,6 +119,8 @@
             </div>
         </div>
     </div>
+
+
     <script src="script.js"></script>
 </body>
 </html>

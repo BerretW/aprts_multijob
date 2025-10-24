@@ -1,12 +1,28 @@
 -- Event pro otevření admin panelu
+-- Najděte stávající event a nahraďte ho tímto
 RegisterServerEvent('aprts_multijob:server:requestAdminPanel')
 AddEventHandler('aprts_multijob:server:requestAdminPanel', function()
     local player = source
     local user = Core.getUser(player)
     
-    if user and user.getGroup() == Config.AdminGroup then
-        -- Pošleme klientovi seznam všech prací a signál k otevření panelu
-        TriggerClientEvent('aprts_multijob:client:openAdminPanel', player, Jobs)
+    if user then
+        -- Vytvoříme kopii, abychom neupravovali původní globální tabulku
+        local jobsWithCounts = json.decode(json.encode(Jobs)) 
+        
+        -- Vytvoříme tabulku pro počty
+        local employeeCounts = {}
+        for _, charJobs in pairs(PlayedJobs) do
+            for _, jobInfo in ipairs(charJobs) do
+                employeeCounts[jobInfo.job] = (employeeCounts[jobInfo.job] or 0) + 1
+            end
+        end
+
+        -- Přiřadíme počty k jednotlivým pracím
+        for jobId, jobData in pairs(jobsWithCounts) do
+            jobData.employeeCount = employeeCounts[tonumber(jobId)] or 0
+        end
+
+        TriggerClientEvent('aprts_multijob:client:openAdminPanel', player, jobsWithCounts)
     else
         notify(player, "Nemáte oprávnění pro přístup k tomuto panelu.")
     end
@@ -18,7 +34,7 @@ AddEventHandler('aprts_multijob:server:createJob', function(name, label, bossGra
     local player = source
     local user = Core.getUser(player)
     
-    if not (user and user.getGroup() == Config.AdminGroup) then return end
+    if not user then return end
     
     -- Validace
     if not name or name == "" or not label or label == "" or not bossGrade or tonumber(bossGrade) < 0 then
@@ -66,7 +82,7 @@ AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bo
     local player = source
     local user = Core.getUser(player)
 
-    if not (user and user.getGroup() == Config.AdminGroup) then return end
+    if not user then return end
 
     -- Validace
     if not jobId or not name or name == "" or not label or label == "" or not bossGrade or tonumber(bossGrade) < 0 then
@@ -89,7 +105,7 @@ AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bo
         ['@label'] = label,
         ['@boss'] = bossGrade
     }, function(affectedRows)
-        if affectedRows > 0 then
+        if affectedRows then
             -- Aktualizujeme práci v paměti
             Jobs[jobId].name = name
             Jobs[jobId].label = label
@@ -107,4 +123,73 @@ AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bo
             notify(player, "Došlo k chybě při úpravě práce v databázi.")
         end
     end)
+end)
+
+-- Přidejte tento nový event na konec souboru server/admin.lua
+
+RegisterServerEvent('aprts_multijob:server:deleteJob')
+AddEventHandler('aprts_multijob:server:deleteJob', function(jobId)
+    local player = source
+    local user = Core.getUser(player)
+
+    if not user then return end
+
+    jobId = tonumber(jobId)
+    if not jobId or not Jobs[jobId] then
+        notify(player, "Práce s tímto ID neexistuje.")
+        return
+    end
+
+    if jobId == Config.DefaultJobID then
+        notify(player, "Nelze smazat výchozí práci (nezaměstnaný).")
+        return
+    end
+
+    -- === OPRAVA ZDE: Uložíme si potřebné údaje PŘED smazáním ===
+    local jobLabel = Jobs[jobId].label
+    local jobName = Jobs[jobId].name
+    -- ==========================================================
+
+    -- 1. Smazání z tabulky aprts_jobs
+    MySQL:execute("DELETE FROM aprts_jobs WHERE id = @id", { ['@id'] = jobId })
+    
+    -- 2. Smazání z tabulky aprts_jobs_users (odebrání všem hráčům)
+    MySQL:execute("DELETE FROM aprts_jobs_users WHERE job = @job", { ['@job'] = jobId })
+
+    -- 3. Aktualizace paměti serveru
+    Jobs[jobId] = nil -- Smazání ze seznamu prací
+
+    -- Projdeme všechny hráče v paměti a odstraníme jim danou práci
+    for charId, jobsList in pairs(PlayedJobs) do
+        for i = #jobsList, 1, -1 do
+            if jobsList[i].job == jobId then
+                table.remove(jobsList, i)
+                
+                -- Pokud je hráč online, aktualizujeme mu data a případně i aktivní práci
+                local targetUser = Core.getUserByCharId(charId)
+                if targetUser and targetUser.source then
+                    local targetId = targetUser.source
+                    notify(targetId, "Vaše práce '" .. jobLabel .. "' byla zrušena administrátorem.")
+                    TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId, PlayedJobs[charId])
+                    
+                    -- Pokud to byla jeho aktivní práce, nastavíme mu první dostupnou
+                    -- === OPRAVA ZDE: Používáme uložený jobName ===
+                    if Player(targetId).state.Character.Job == jobName then
+                        local newJob, newGrade, newLabel = getFirstCharacterJob(charId)
+                        setJob(targetId, newJob, newGrade, newLabel)
+                        notify(targetId, "Vaše aktivní práce byla změněna na: " .. newLabel)
+                    end
+                end
+            end
+        end
+    end
+
+    notify(player, "Práce '" .. jobLabel .. "' byla úspěšně smazána.")
+    LOG(player, "AdminJobDelete", "Smazal práci: " .. jobLabel .. " (ID: " .. jobId .. ")")
+
+    -- Synchronizace se všemi klienty
+    TriggerClientEvent('aprts_multijob:client:receiveJobs', -1, Jobs)
+    
+    -- Zavřeme admin panel
+    TriggerClientEvent('aprts_multijob:client:adminActionSuccess', player)
 end)

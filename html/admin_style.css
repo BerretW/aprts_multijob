@@ -1,4 +1,7 @@
 /* Tento soubor bude obsahovat styly specifické pro admin panel */
+#admin-container, #job-modal {
+    font-family: 'Times New Roman', Times, serif;
+}
 #admin-container {
     position: absolute;
     top: 50%;
@@ -66,4 +69,11 @@
     color: #3d2314;
     font-family: sans-serif;
     font-size: 16px;
+}
+
+.item-actions .delete-job-btn {
+    background-color: #8b0000;
+}
+.item-actions .delete-job-btn:hover {
+    background-color: #a52a2a;
 }
