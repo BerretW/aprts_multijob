@@ -359,6 +359,9 @@ const adminContainer = document.getElementById("admin-container");
 const adminCloseButton = document.getElementById("admin-close-button");
 const adminJobsList = document.getElementById("admin-jobs-list");
 const createJobBtn = document.getElementById("create-job-btn");
+const adminSearchInput = document.getElementById("admin-search-input"); 
+
+let allAdminJobs = []; 
 
 // Modal pro editaci/vytvoření práce
 const jobModal = document.getElementById("job-modal");
@@ -370,7 +373,7 @@ const jobBossInput = document.getElementById("job-boss-input");
 const jobSaveBtn = document.getElementById("job-save-btn");
 const jobCancelBtn = document.getElementById("job-cancel-btn");
 
-// Modal pro přiřazení práce
+// ... (zbytek proměnných zůstává stejný) ...
 const assignJobModal = document.getElementById('assign-job-modal');
 const assignJobIdInput = document.getElementById('assign-job-id-input');
 const assignJobLabel = document.getElementById('assign-job-label');
@@ -381,8 +384,13 @@ const assignJobCancelBtn = document.getElementById('assign-job-cancel-btn');
 
 
 function openAdminPanel(jobs) {
-  populateAdminJobs(jobs);
-  adminContainer.classList.remove("hidden");
+    allAdminJobs = Object.values(jobs)
+        .filter(job => job && job.label)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    
+    populateAdminJobs(allAdminJobs); 
+    adminSearchInput.value = ''; 
+    adminContainer.classList.remove("hidden");
 }
 
 function closeAdminPanel() {
@@ -390,13 +398,34 @@ function closeAdminPanel() {
   post("admin:close");
 }
 
-function populateAdminJobs(jobs) {
+adminSearchInput.addEventListener('input', () => {
+    const searchTerm = adminSearchInput.value.toLowerCase().trim();
+    
+    if (searchTerm === '') {
+        populateAdminJobs(allAdminJobs); 
+        return;
+    }
+
+    const filteredJobs = allAdminJobs.filter(job => {
+        const jobId = String(job.id).toLowerCase();
+        const jobLabel = job.label.toLowerCase();
+        const jobName = job.name.toLowerCase();
+        
+        return jobId.includes(searchTerm) || jobLabel.includes(searchTerm) || jobName.includes(searchTerm);
+    });
+
+    populateAdminJobs(filteredJobs);
+});
+
+function populateAdminJobs(jobsToDisplay) {
     adminJobsList.innerHTML = "";
 
-    const validJobs = Object.values(jobs).filter(job => job && job.label);
-    const sortedJobs = validJobs.sort((a, b) => a.name.localeCompare(b.name));
+    if (jobsToDisplay.length === 0) {
+        adminJobsList.innerHTML = `<p style="text-align: center; margin-top: 20px;">Žádné práce neodpovídají hledání.</p>`;
+        return;
+    }
 
-    sortedJobs.forEach(job => {
+    jobsToDisplay.forEach(job => {
         const item = document.createElement('div');
         item.className = 'list-item';
         item.innerHTML = `
@@ -415,30 +444,31 @@ function populateAdminJobs(jobs) {
         `;
         adminJobsList.appendChild(item);
     });
+    
+    attachAdminListeners();
+}
 
-    // Listener pro PŘIŘAZENÍ práce
+function attachAdminListeners() {
     document.querySelectorAll('.assign-job-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.dataset.jobId;
-            const jobData = sortedJobs.find(j => j.id == id);
+            const jobData = allAdminJobs.find(j => j.id == id);
             if (jobData) {
                 openAssignJobModal(jobData);
             }
         });
     });
 
-    // Listener pro EDITACI práce
     document.querySelectorAll('.edit-job-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.dataset.jobId;
-            const jobData = sortedJobs.find(j => j.id == id);
+            const jobData = allAdminJobs.find(j => j.id == id);
             if (jobData) {
                 openJobModal(jobData);
             }
         });
     });
 
-    // Listener pro SMAZÁNÍ práce
     document.querySelectorAll('.delete-job-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.dataset.jobId;
@@ -451,6 +481,7 @@ function populateAdminJobs(jobs) {
     });
 }
 
+// === ZDE JE ZMĚNA ===
 function openJobModal(jobData = null) {
   if (jobData) {
     // Editace
@@ -459,6 +490,10 @@ function openJobModal(jobData = null) {
     jobNameInput.value = jobData.name;
     jobLabelInput.value = jobData.label;
     jobBossInput.value = jobData.boss;
+    
+    // ZMĚNA ZDE: Zakážeme pole s interním názvem
+    jobNameInput.disabled = true;
+
   } else {
     // Vytvoření
     jobModalTitle.textContent = "Vytvořit Novou Práci";
@@ -466,10 +501,14 @@ function openJobModal(jobData = null) {
     jobNameInput.value = "";
     jobLabelInput.value = "";
     jobBossInput.value = 5; // Default hodnota
+
+    // ZMĚNA ZDE: Povolíme pole s interním názvem pro vytvoření nové práce
+    jobNameInput.disabled = false;
   }
   jobModal.classList.remove("hidden");
 }
 
+// ... (zbytek souboru zůstává stejný) ...
 function closeJobModal() {
   jobModal.classList.add("hidden");
 }

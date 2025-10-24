@@ -76,7 +76,6 @@ AddEventHandler('aprts_multijob:server:createJob', function(name, label, bossGra
     end)
 end)
 
--- Editace existující práce
 RegisterServerEvent('aprts_multijob:server:editJob')
 AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bossGrade)
     local player = source
@@ -99,6 +98,16 @@ AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bo
         return
     end
 
+    -- === ZMĚNA ZDE: SERVER-SIDE KONTROLA ===
+    -- Zkontrolujeme, zda se administrátor nepokouší změnit interní název práce
+    if name ~= Jobs[jobId].name then
+        notify(player, "Interní název (name) práce nelze měnit z důvodu integrity dat VORP.")
+        -- Pro jistotu můžeme logovat pokus o neoprávněnou změnu
+        LOG(player, "AdminJobEditFail", "Pokus o změnu interního názvu práce ID: " .. jobId .. " z '" .. Jobs[jobId].name .. "' na '" .. name .. "'")
+        return -- Zastavíme provádění eventu
+    end
+    -- =======================================
+
     MySQL:execute("UPDATE aprts_jobs SET name = @name, label = @label, boss = @boss WHERE id = @id", {
         ['@id'] = jobId,
         ['@name'] = name,
@@ -106,7 +115,7 @@ AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bo
         ['@boss'] = bossGrade
     }, function(affectedRows)
         if affectedRows then
-            -- Aktualizujeme práci v paměti
+            -- Aktualizujeme práci v paměti (název se nemění, ale pro úplnost ho zde necháme)
             Jobs[jobId].name = name
             Jobs[jobId].label = label
             Jobs[jobId].boss = bossGrade
@@ -124,7 +133,6 @@ AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bo
         end
     end)
 end)
-
 -- Přidejte tento nový event na konec souboru server/admin.lua
 
 RegisterServerEvent('aprts_multijob:server:deleteJob')

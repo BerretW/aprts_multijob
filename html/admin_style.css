@@ -38,6 +38,33 @@
     margin-right: 20px;
 }
 
+/* === NOVÉ STYLY PRO VYHLEDÁVÁNÍ === */
+.search-bar {
+    margin-bottom: 15px;
+}
+
+#admin-search-input {
+    width: 96%; /* 100% minus padding */
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid #b22222;
+    border-radius: 4px;
+    color: #f0e6d2;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+}
+
+#admin-search-input::placeholder {
+    color: #cccccc;
+}
+
+#admin-search-input:focus {
+    outline: none;
+    box-shadow: 0 0 5px #ff4500;
+}
+/* ================================== */
+
+
 /* Tlačítko pro vytvoření nové práce */
 #create-job-btn {
     width: 100%;
@@ -70,6 +97,32 @@
     font-family: sans-serif;
     font-size: 16px;
 }
+
+.item-actions .delete-job-btn {
+    background-color: #8b0000;
+}
+.item-actions .delete-job-btn:hover {
+    background-color: #a52a2a;
+}
+
+.modal-content input {
+    width: 95%;
+    padding: 10px;
+    background-color: #f0e6d2;
+    border: 2px solid #4a2c1a;
+    border-radius: 4px;
+    color: #3d2314;
+    font-family: sans-serif;
+    font-size: 16px;
+}
+
+/* === PŘIDEJTE TENTO NOVÝ BLOK === */
+.modal-content input:disabled {
+    background-color: #d3c8b4; /* Tmavší pozadí */
+    color: #6d5b4f; /* Tmavší text */
+    cursor: not-allowed; /* Ikona zákazu při najetí myší */
+}
+/* ================================== */
 
 .item-actions .delete-job-btn {
     background-color: #8b0000;
