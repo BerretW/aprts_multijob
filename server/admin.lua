@@ -100,6 +100,7 @@ AddEventHandler('aprts_multijob:server:editJob', function(jobId, name, label, bo
 
     -- === ZMĚNA ZDE: SERVER-SIDE KONTROLA ===
     -- Zkontrolujeme, zda se administrátor nepokouší změnit interní název práce
+    print( "Stávající název práce: " .. Jobs[jobId].name .. ", Pokus o změnu na: " .. name )  -- Debug výpis
     if name ~= Jobs[jobId].name then
         notify(player, "Interní název (name) práce nelze měnit z důvodu integrity dat VORP.")
         -- Pro jistotu můžeme logovat pokus o neoprávněnou změnu

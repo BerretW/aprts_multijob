@@ -546,7 +546,7 @@ jobCancelBtn.addEventListener("click", closeJobModal);
 jobSaveBtn.addEventListener("click", () => {
   const job = {
     id: jobIdInput.value ? parseInt(jobIdInput.value) : null,
-    name: jobNameInput.value.trim().toLowerCase(),
+    name: jobNameInput.value.trim(),
     label: jobLabelInput.value.trim(),
     boss: parseInt(jobBossInput.value) || 0,
   };
