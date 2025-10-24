@@ -30,23 +30,30 @@ function round(num)
 end
 
 
+-- NOVÁ FUNKCE PRO KONTROLU BOSSE NA KLIENTOVI
+function IsClientPlayerBoss()
+    if not LocalPlayer.state.Character then return false end
 
+    local activeJobName = LocalPlayer.state.Character.Job
+    local activeJobGrade = LocalPlayer.state.Character.Grade
 
-
-
-
-
-CreateThread(function()
-    while true do
-        local pause = 1000
-        if menuOpen == true then
-            DisableActions(PlayerPedId())
-            DisableBodyActions(PlayerPedId())
-            pause = 0
-        end
-        Citizen.Wait(pause)
+    if not activeJobName or not JobsByName[activeJobName] then
+        debugPrint("IsClientPlayerBoss: Hráč nemá platnou aktivní práci.")
+        return false
     end
-end)
+
+    local jobData = JobsByName[activeJobName]
+
+    -- Zkontroluje, zda má práce definovanou hodnost pro šéfa a zda ji hráč splňuje
+    if jobData.boss and jobData.boss > 0 and activeJobGrade >= jobData.boss then
+        debugPrint("IsClientPlayerBoss: Hráč JE šéfem. Grade: " .. activeJobGrade .. ", Požadováno: " .. jobData.boss)
+        return true
+    end
+
+    debugPrint("IsClientPlayerBoss: Hráč NENÍ šéfem. Grade: " .. activeJobGrade .. ", Požadováno: " .. (jobData.boss or "N/A"))
+    return false
+end
+
 
 function DisableBodyActions(ped)
     Citizen.InvokeNative(0xFE99B66D079CF6BC, 0, 0x27D1C284, true) -- loot

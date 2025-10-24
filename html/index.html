@@ -9,35 +9,39 @@
 </head>
 <body>
     <div id="container" class="hidden">
-        <div class="header">
+        <div class="header" id="main-header">
             <h1 id="menu-title">Správa zaměstnání</h1>
             <button id="close-button" class="close-btn">X</button>
         </div>
         
-        <!-- ================== JOB MENU ================== -->
-        <div id="job-menu" class="menu-content">
+        <div id="menu-content">
+            <!-- Vždy viditelná část pro správu vlastních prací -->
             <p class="current-job-info">Aktivní práce: <span id="current-job-label">Načítání...</span></p>
             <div id="my-jobs-list" class="list">
                 <!-- Seznam prací bude vygenerován zde -->
             </div>
-        </div>
 
-        <!-- ================== BOSS MENU ================== -->
-        <div id="boss-menu" class="menu-content hidden">
-            <div class="tabs">
-                <button class="tab-button active" data-tab="employees">Zaměstnanci</button>
-                <button class="tab-button" data-tab="hire">Nábor</button>
-            </div>
-            
-            <div id="employees-tab" class="tab-content">
-                <div id="employees-list" class="list">
-                    <!-- Seznam zaměstnanců bude vygenerován zde -->
+            <!-- Oddělovač -->
+            <hr class="separator">
+
+            <!-- Sekce pro Bossa - defaultně skrytá -->
+            <div id="boss-section" class="hidden">
+                <h2 id="boss-panel-title">Boss Panel</h2>
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="employees">Zaměstnanci</button>
+                    <button class="tab-button" data-tab="hire">Nábor</button>
                 </div>
-            </div>
+                
+                <div id="employees-tab" class="tab-content">
+                    <div id="employees-list" class="list">
+                        <!-- Seznam zaměstnanců bude vygenerován zde -->
+                    </div>
+                </div>
 
-            <div id="hire-tab" class="tab-content hidden">
-                 <p>Najměte hráče, který stojí poblíž vás.</p>
-                 <button id="hire-player-btn" class="action-btn">Najmout hráče</button>
+                <div id="hire-tab" class="tab-content hidden">
+                     <p>Najměte hráče, který stojí poblíž vás.</p>
+                     <button id="hire-player-btn" class="action-btn">Najmout hráče</button>
+                </div>
             </div>
         </div>
     </div>

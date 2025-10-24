@@ -16,16 +16,15 @@ async function post(eventName, data = {}) {
 const container = document.getElementById('container');
 const closeButton = document.getElementById('close-button');
 
-// Menu panely
-const jobMenu = document.getElementById('job-menu');
-const bossMenu = document.getElementById('boss-menu');
-
-// Globální proměnné pro uchování dat
-let currentJobName = '';
+// Globální proměnná pro uchování jména aktivní práce
+let activeJobName = '';
 
 // Schování NUI
 function closeNUI() {
     container.classList.add('hidden');
+    container.style.top = '50%';
+    container.style.left = '50%';
+    container.style.transform = 'translate(-50%, -50%)';
     post('close');
 }
 
@@ -41,10 +40,12 @@ document.addEventListener('keydown', (e) => {
 const myJobsList = document.getElementById('my-jobs-list');
 const currentJobLabel = document.getElementById('current-job-label');
 
-function populateMyJobs(jobs, activeJob, activeJobLabel) {
+function populateMyJobs(jobs, currentJob, currentJobLbl, currentGrade) {
     myJobsList.innerHTML = '';
-    currentJobName = activeJob;
-    currentJobLabel.textContent = activeJobLabel || 'Nezaměstnaný';
+    
+    // Vždy použijeme čerstvá data z Lua
+    activeJobName = currentJob;
+    currentJobLabel.textContent = `${currentJobLbl} (Hodnost: ${currentGrade})`;
 
     if (!jobs || jobs.length === 0) {
         myJobsList.innerHTML = '<p>Nemáte žádné další práce.</p>';
@@ -52,7 +53,9 @@ function populateMyJobs(jobs, activeJob, activeJobLabel) {
     }
 
     jobs.forEach(job => {
-        const isActive = job.name === activeJob;
+        // Porovnáváme interní jméno práce (např. 'police') s aktivním jménem
+        const isActive = job.name === activeJobName;
+        
         const item = document.createElement('div');
         item.className = 'list-item';
         item.innerHTML = `
@@ -67,10 +70,10 @@ function populateMyJobs(jobs, activeJob, activeJobLabel) {
         myJobsList.appendChild(item);
     });
 
-    // Event Listeners pro nově vytvořená tlačítka
     document.querySelectorAll('.set-active-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             post('setActiveJob', { jobName: e.target.dataset.jobName });
+            // OPRAVA ZDE: Zavoláme closeNUI() po odeslání požadavku
             closeNUI();
         });
     });
@@ -79,6 +82,7 @@ function populateMyJobs(jobs, activeJob, activeJobLabel) {
         btn.addEventListener('click', (e) => {
             if (confirm(`Opravdu chcete opustit práci ${e.target.dataset.jobName}?`)) {
                 post('quitJob', { jobName: e.target.dataset.jobName });
+                // OPRAVA ZDE: Zavoláme closeNUI() po potvrzení a odeslání požadavku
                 closeNUI();
             }
         });
@@ -89,7 +93,6 @@ function populateMyJobs(jobs, activeJob, activeJobLabel) {
 const employeesList = document.getElementById('employees-list');
 let bossJobName = '';
 
-// Tab switching
 document.querySelectorAll('.tab-button').forEach(button => {
     button.addEventListener('click', () => {
         document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -127,7 +130,6 @@ function populateEmployees(employees, jobName) {
         employeesList.appendChild(item);
     });
 
-    // Event Listeners
     document.querySelectorAll('.promote-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const charid = e.target.dataset.charid;
@@ -140,6 +142,7 @@ function populateEmployees(employees, jobName) {
                     newGrade: parseInt(newGrade),
                     jobName: bossJobName 
                 });
+                // OPRAVA ZDE: Zavřeme okno po akci
                 closeNUI();
             } else if (newGrade !== null) {
                 alert('Zadejte prosím platné číslo.');
@@ -155,6 +158,7 @@ function populateEmployees(employees, jobName) {
                     charid: parseInt(charid),
                     jobName: bossJobName
                 });
+                 // OPRAVA ZDE: Zavřeme okno po akci
                 closeNUI();
             }
         });
@@ -163,32 +167,61 @@ function populateEmployees(employees, jobName) {
 
 document.getElementById('hire-player-btn').addEventListener('click', () => {
     post('hirePlayer', { jobName: bossJobName });
+    // U najmutí se okno zavírá už na straně Lua (v nui_handler.lua),
+    // ale pro jistotu to můžeme přidat i sem.
     closeNUI();
 });
 
 
 // ==================== MAIN EVENT LISTENER ====================
+// ... (beze změny)
 window.addEventListener('message', (event) => {
     const data = event.data;
-    const action = data.action;
 
-    switch (action) {
-        case 'openJobMenu':
-            document.getElementById('menu-title').textContent = "Správa zaměstnání";
-            bossMenu.classList.add('hidden');
-            jobMenu.classList.remove('hidden');
-            populateMyJobs(data.jobs, data.currentJob, data.currentJobLabel);
-            container.classList.remove('hidden');
-            break;
-        
-        case 'openBossMenu':
-            document.getElementById('menu-title').textContent = `Boss Menu (${data.jobLabel})`;
-            jobMenu.classList.add('hidden');
-            bossMenu.classList.remove('hidden');
-            // Reset to default tab
+    if (data.action === 'openMenu') {
+        // Vždy naplníme základní info pomocí čerstvých dat ze statebagu
+        populateMyJobs(data.jobs, data.currentJob, data.currentJobLabel, data.currentGrade);
+
+        const bossSection = document.getElementById('boss-section');
+        if (data.isBoss) {
+            // Pokud je hráč šéf, zobrazíme a naplníme boss sekci
+            document.getElementById('boss-panel-title').textContent = `Boss Panel (${data.currentJobLabel})`;
+            populateEmployees(data.employees, data.currentJob); // Použijeme currentJob pro konzistenci
+            // Reset na defaultní tab
             document.querySelector('.tab-button[data-tab="employees"]').click();
-            populateEmployees(data.employees, data.jobName);
-            container.classList.remove('hidden');
-            break;
+            bossSection.classList.remove('hidden');
+        } else {
+            // Jinak sekci skryjeme
+            bossSection.classList.add('hidden');
+        }
+        
+        container.classList.remove('hidden');
     }
+});
+
+
+// ==================== DRAGGABLE WINDOW LOGIC ====================
+// ... (beze změny)
+const header = document.getElementById("main-header");
+let isDragging = false;
+let offsetX, offsetY;
+
+header.addEventListener('mousedown', (e) => {
+    if (e.target.tagName === 'BUTTON') return;
+    isDragging = true;
+    offsetX = e.clientX - container.offsetLeft;
+    offsetY = e.clientY - container.offsetTop;
+    header.style.cursor = 'grabbing';
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    container.style.left = `${e.clientX - offsetX}px`;
+    container.style.top = `${e.clientY - offsetY}px`;
+    container.style.transform = 'translate(0, 0)';
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+    header.style.cursor = 'grab';
 });

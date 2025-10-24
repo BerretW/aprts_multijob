@@ -102,6 +102,15 @@ function getJobID(name)
     return nil
 end
 
+function getJobLabel(name)
+    for k, v in pairs(Jobs) do
+        if v.name == name then
+            return v.label
+        end
+    end
+    return name -- Fallback na jméno, pokud label nenajde
+end
+
 function IsPlayerBoss(player, jobName)
     local charID = Player(player).state.Character.CharId
     for k, v in pairs(PlayedJobs[charID]) do
@@ -156,7 +165,7 @@ function getNumOfPlayerJobs(player)
     local count = 0
     count = table.count(PlayedJobs[charID] or {})
     --
-    print("Počet jobů hráče " .. charID .. " je " .. count)
+    debugPrint("Počet jobů hráče " .. charID .. " je " .. count)
     return count
 end
 
@@ -172,6 +181,7 @@ end
 
 function getPlayerJobInfo(player, jobName)
     local charID = Player(player).state.Character.CharId
+    if not PlayedJobs[charID] then return nil end
     for k, v in pairs(PlayedJobs[charID]) do
         if Jobs[v.job] and Jobs[v.job].name == jobName then
             return v
@@ -226,89 +236,112 @@ function setPlayerJob(player, targetId, jobName, grade)
     end
     if not PlayedJobs[charId] then
         PlayedJobs[charId] = {}
-        table.insert(PlayedJobs[charId], {
-            charid = charId,
-            job = jobID,
-            grade = grade,
-            name = Jobs[jobID] and Jobs[jobID].name or "Unknown",
-            label = Jobs[jobID] and Jobs[jobID].label or "Unknown"
-        })
-        MySQL:execute("INSERT INTO aprts_jobs_users (charid, job, grade) VALUES (@charid, @job, @grade)", {
-            ['@charid'] = charId,
-            ['@job'] = jobID,
-            ['@grade'] = grade
-        })
-        notify(targetId, "Byli jste najati do práce: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") ..
-            " na pozici: " .. grade)
-    else
-        local hasThisJob = false
-        for k, v in pairs(PlayedJobs[charId]) do
-            if v.job == jobID then
-                hasThisJob = true
-                break
-            end
-        end
-        if hasThisJob then
-            notify(player, "Hráč již má tuto práci!")
-            return false
-        end
-        table.insert(PlayedJobs[charId], {
-            charid = charId,
-            job = jobID,
-            grade = grade,
-            name = Jobs[jobID] and Jobs[jobID].name or "Unknown",
-            label = Jobs[jobID] and Jobs[jobID].label or "Unknown"
-        })
-        MySQL:execute("INSERT INTO aprts_jobs_users (charid, job, grade) VALUES (@charid, @job, @grade)", {
-            ['@charid'] = charId,
-            ['@job'] = jobID,
-            ['@grade'] = grade
-        })
-        notify(targetId, "Byli jste najati do práce: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") ..
-            " na pozici: " .. grade)
+    end
 
-    end
-    TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId, PlayedJobs[charId])
-    return true
-end
-
-AddEventHandler("vorp:playerJobChange", function(source, newjob, oldjob)
-    local charID = Player(source).state.Character.CharId
-    if not PlayedJobs[charID] then
-        PlayedJobs[charID] = {}
-    end
-    local jobID = getJobID(newjob)
-    if not jobID then
-        print("Neznámá práce: " .. newjob)
-        RegisterJob(newjob, newjob, Config.BossMenuGrade)
-        jobID = getJobID(newjob)
-    end
     local hasThisJob = false
-    for k, v in pairs(PlayedJobs[charID]) do
+    for k, v in pairs(PlayedJobs[charId]) do
         if v.job == jobID then
             hasThisJob = true
             break
         end
     end
-    if not hasThisJob then
-        table.insert(PlayedJobs[charID], {
-            charid = charID,
-            job = jobID,
-            grade = Player(source).state.Character.Grade,
-            name = Jobs[jobID] and Jobs[jobID].name or "Unknown",
-            label = Jobs[jobID] and Jobs[jobID].label or "Unknown"
-        })
-        MySQL:execute("INSERT INTO aprts_jobs_users (charid, job, grade) VALUES (@charid, @job, @grade)", {
-            ['@charid'] = charID,
-            ['@job'] = jobID,
-            ['@grade'] = Player(source).state.Character.Grade
-        })
-        notify(source,
-            "Byli jste najati do práce: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") .. " na pozici: " ..
-                Player(source).state.Character.Grade)
-        LOG(source, "JOB",
-            "Hráč získal práci " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") .. " na pozici: " ..
-                Player(source).state.Character.Grade)
-        TriggerClientEvent("aprts_multijob:client:receiveMyJobs", source, PlayedJobs[charID])
+    if hasThisJob then
+        notify(player, "Hráč již má tuto práci!")
+        return false
     end
+
+    table.insert(PlayedJobs[charId], {
+        charid = charId,
+        job = jobID,
+        grade = grade,
+        name = Jobs[jobID] and Jobs[jobID].name or "Unknown",
+        label = Jobs[jobID] and Jobs[jobID].label or "Unknown"
+    })
+    MySQL:execute("INSERT INTO aprts_jobs_users (charid, job, grade) VALUES (@charid, @job, @grade)", {
+        ['@charid'] = charId,
+        ['@job'] = jobID,
+        ['@grade'] = grade
+    })
+    notify(targetId, "Byli jste najati do práce: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") ..
+        " na pozici: " .. grade)
+    
+    TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId, PlayedJobs[charId])
+    return true
+end
+
+-- TATO UDÁLOST JE STARÁ A DUPLIKOVANÁ, ZAKOMENTOVÁVÁM JI. POUŽIJEME NOVOU "vorp:playerLoaded"
+-- AddEventHandler("vorp:playerJobChange", function(source, newjob, oldjob) ... end)
+
+
+-- ====================================================================================
+-- NOVÁ SEKCE: SYNCHRONIZACE PRÁCE PŘI PŘIHLÁŠENÍ HRÁČE
+-- ====================================================================================
+AddEventHandler("vorp:playerLoaded", function(user)
+    local source = user.source
+    local character = user.getUsedCharacter
+    local charId = character.charIdentifier
+    local activeJobName = character.job
+    local activeJobGrade = character.jobgrade
+
+    debugPrint("Spouštím synchronizaci práce pro hráče " .. GetPlayerName(source) .. " (CharID: " .. charId .. ")")
+    debugPrint("Aktivní práce z VORP: " .. activeJobName .. " (Grade: " .. activeJobGrade .. ")")
+
+    -- Ujistíme se, že hráč má pro sebe vytvořenou tabulku v paměti
+    if not PlayedJobs[charId] then
+        PlayedJobs[charId] = {}
+    end
+
+    -- Najdeme ID aktivní práce. Pokud neexistuje v `aprts_jobs`, vytvoříme ji.
+    local jobId = getJobID(activeJobName)
+    if not jobId then
+        debugPrint("Práce '" .. activeJobName .. "' neexistuje v aprts_jobs. Vytvářím...")
+        RegisterJob(activeJobName, activeJobName, Config.BossMenuGrade)
+        jobId = getJobID(activeJobName)
+        if not jobId then
+            print("^1[aprts_multijob] CHYBA: Nepodařilo se vytvořit a načíst práci '"..activeJobName.."'!^0")
+            return
+        end
+    end
+
+    -- Zkontrolujeme, zda hráč již má tuto práci v seznamu `PlayedJobs`
+    local hasJob = false
+    for _, jobData in ipairs(PlayedJobs[charId]) do
+        if jobData.job == jobId then
+            hasJob = true
+            -- Můžeme zde případně i synchronizovat grade, pokud se liší
+            if jobData.grade ~= activeJobGrade then
+                 debugPrint("Grade pro práci '"..activeJobName.."' se liší. Aktualizuji z "..jobData.grade.." na "..activeJobGrade)
+                 jobData.grade = activeJobGrade
+                 MySQL:execute("UPDATE aprts_jobs_users SET grade = @grade WHERE charid = @charid AND job = @job", {
+                     ['@grade'] = activeJobGrade,
+                     ['@charid'] = charId,
+                     ['@job'] = jobId
+                 })
+            end
+            break
+        end
+    end
+
+    -- Pokud hráč práci v `aprts_jobs_users` nemá, přidáme mu ji
+    if not hasJob then
+        debugPrint("Hráč nemá práci '" .. activeJobName .. "' v aprts_jobs_users. Přidávám záznam.")
+        
+        table.insert(PlayedJobs[charId], {
+            charid = charId,
+            job = jobId,
+            grade = activeJobGrade,
+            name = Jobs[jobId].name,
+            label = Jobs[jobId].label
+        })
+
+        MySQL:execute("INSERT INTO aprts_jobs_users (charid, job, grade) VALUES (@charid, @job, @grade)", {
+            ['@charid'] = charId,
+            ['@job'] = jobId,
+            ['@grade'] = activeJobGrade
+        })
+
+        notify(source, "Vaše aktivní práce '" .. Jobs[jobId].label .. "' byla synchronizována.")
+    end
+
+    debugPrint("Synchronizace práce pro hráče " .. GetPlayerName(source) .. " dokončena.")
 end)

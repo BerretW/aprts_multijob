@@ -49,38 +49,6 @@ AddEventHandler("onResourceStart", function(resource)
     end
 end)
 
--- RegisterServerEvent('aprts_multijob:server:registerJob')
--- AddEventHandler('aprts_multijob:server:registerJob', function(jobData)
---     local player = source
---     if not Player(player) then
---         return
---     end
---     if not jobData.name or not jobData.label or not jobData.boss then
---         notify(player, "Neplatná data!")
---         return
---     end
---     local jobId = 0
---     MySQL:execute("INSERT INTO aprts_jobs (name, label, boss) VALUES (@name, @label, @boss)", {
---         ['@name'] = jobData.name,
---         ['@label'] = jobData.label,
---         ['@boss'] = jobData.boss
---     }, function(result)
---         -- print(json.encode(result))
---         jobId = result.insertId
---         Jobs[jobId] = {
---             id = jobId,
---             name = jobData.name,
---             label = jobData.label,
---             boss = jobData.boss
---         }
---         notify(player, "Práce byla zaregistrována! ID: " .. jobId)
---         TriggerClientEvent('aprts_multijob:client:receiveJobs', -1, Jobs)
---     end)
---     while jobId == 0 do
---         Wait(100)
---     end
--- end)
-
 RegisterServerEvent('aprts_multijob:server:requestJobs')
 AddEventHandler('aprts_multijob:server:requestJobs', function()
     local player = source
@@ -168,29 +136,6 @@ AddEventHandler('aprts_multijob:server:getEmployees', function(jobId)
     TriggerClientEvent('aprts_multijob:client:receiveEmployees', player, employees)
 end)
 
--- RegisterServerEvent('aprts_multijob:server:getPlayerJobs')
--- AddEventHandler('aprts_multijob:server:getPlayerJobs', function(targetId)
---     local player = source
---     if not Player(player) then
---         return
---     end
---     if not Player(Player(targetId).state.Character) then
---         notify(player, "Hráč není online!")
---         return
---     end
---     local charId = Player(targetId).state.Character.CharId
---     if not PlayedJobs[charId] then
---         notify(player, "Hráč nemá žádné práce!")
---         return
---     end
---     local jobList = {}
---     for k, v in pairs(PlayedJobs[charId]) do
---         v.label = Jobs[v.job] and Jobs[v.job].label or "Unknown"
---         table.insert(jobList, v)
---     end
---     TriggerClientEvent('aprts_multijob:client:receivePlayerJobs', player, targetId, jobList)
--- end)
-
 RegisterServerEvent('aprts_multijob:server:setPlayerJob')
 AddEventHandler('aprts_multijob:server:setPlayerJob', function(targetId, jobName, grade)
     local player = source
@@ -233,8 +178,8 @@ AddEventHandler('aprts_multijob:server:quitJob', function(jobName)
             })
             notify(player, "Opustili jste práci: " .. (Jobs[jobId] and Jobs[jobId].label or "Unknown"))
             TriggerClientEvent("aprts_multijob:client:receiveMyJobs", player, PlayedJobs[charId])
-            getFirstPlayerJob(player)
-            setJob(player, getFirstPlayerJob(player))
+            local newJob, newGrade, newLabel = getFirstPlayerJob(player)
+            setJob(player, newJob, newGrade, newLabel)
             LOG(player, "JobQuit", "Player " .. GetPlayerName(player) .. " | ID: " .. player .. " quit job: " ..
                 (Jobs[jobId] and Jobs[jobId].label or "Unknown") .. " | JobID: " .. jobId)
             break
@@ -252,11 +197,9 @@ AddEventHandler('aprts_multijob:server:setJobGrade', function(charID, jobName, g
     if not Player(player) then
         return
     end
-    local targetId = Core.getUserByCharId(charID) and Core.getUserByCharId(charID).source or 0
-    if not Player(targetId).state.Character then
-        notify(player, "Hráč není online!")
-        return
-    end
+    local targetUser = Core.getUserByCharId(charID)
+    local targetId = targetUser and targetUser.source or 0
+    
     local jobID = getJobID(jobName)
     if not jobID or jobID == 0 then
         notify(player, "Neplatná práce!")
@@ -266,31 +209,37 @@ AddEventHandler('aprts_multijob:server:setJobGrade', function(charID, jobName, g
         notify(player, "Nemůžete změnit pozici ve výchozí práci!")
         return
     end
-    local charId = Player(targetId).state.Character.CharId
-    if not PlayedJobs[charId] then
+
+    if not PlayedJobs[charID] then
         notify(player, "Hráč nemá žádné práce!")
         return
     end
+
     local jobFound = false
-    for k, v in pairs(PlayedJobs[charId]) do
+    for k, v in pairs(PlayedJobs[charID]) do
         if v.job == jobID then
             jobFound = true
             v.grade = grade
             MySQL:execute("UPDATE aprts_jobs_users SET grade = @grade WHERE charid = @charid AND job = @job", {
-                ['@charid'] = charId,
+                ['@charid'] = charID,
                 ['@job'] = jobID,
                 ['@grade'] = grade
             })
-            notify(targetId, "Vaše pozice v práci: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") ..
-                " byla změněna na: " .. grade)
+            
             notify(player, "Pozice hráče v práci: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") ..
                 " byla změněna na: " .. grade)
-            TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId, PlayedJobs[charId])
             LOG(player, "JobGradeChange",
-                "Player " .. GetPlayerName(player) .. " | ID: " .. player .. " changed job grade for " ..
-                    GetPlayerName(targetId) .. " | ID: " .. targetId .. " in job: " ..
-                    (Jobs[jobID] and Jobs[jobID].label or "Unknown") .. " | JobID: " .. jobID .. " to grade: " .. grade)
-            setJob(targetId, jobName, grade)
+                "Player " .. GetPlayerName(player) .. " | ID: " .. player .. " changed job grade for charId " ..
+                    charID .. " in job: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") .. " | JobID: " .. jobID .. " to grade: " .. grade)
+            
+            if targetId and targetId > 0 then
+                notify(targetId, "Vaše pozice v práci: " .. (Jobs[jobID] and Jobs[jobID].label or "Unknown") .. " byla změněna na: " .. grade)
+                TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId, PlayedJobs[charID])
+                 -- Update active job if it's the one being changed
+                if Player(targetId).state.Character.Job == jobName then
+                    setJob(targetId, jobName, grade, Jobs[jobID].label)
+                end
+            end
             break
         end
     end
@@ -320,14 +269,16 @@ AddEventHandler('aprts_multijob:server:setJobActive', function(jobName)
         notify(player, "Nemáte žádné práce!")
         return
     end
-    local hasThisJob = false
-    -- print(jobId)
+    
     local playerJob = getPlayerJobInfo(player, jobName)
     if not playerJob then
         notify(player, "Nemáte tuto práci!")
         return
     end
-    setJob(player, Jobs[jobId].name, playerJob.grade)
+
+    -- OPRAVA ZDE: Přidán čtvrtý argument 'Jobs[jobId].label' do volání funkce setJob
+    setJob(player, Jobs[jobId].name, playerJob.grade, Jobs[jobId].label)
+    
     notify(player, "Nyní pracujete jako: " .. (Jobs[jobId] and Jobs[jobId].label or "Unknown"))
     LOG(player, "JobChange", "Player " .. GetPlayerName(player) .. " | ID: " .. player .. " changed job to: " ..
         (Jobs[jobId] and Jobs[jobId].label or "Unknown") .. " | JobID: " .. jobId)
@@ -343,7 +294,7 @@ AddEventHandler('aprts_multijob:server:hirePlayer', function(targetId, jobName, 
     else
         notify(player, "Hráč byl úspěšně najat!")
         if setPlayerJob(player, targetId, jobName, grade) then
-            setJob(targetId, jobName, grade)
+            setJob(targetId, jobName, grade, getJobLabel(jobName))
             LOG(player, "JobHire",
                 "Player " .. GetPlayerName(player) .. " | ID: " .. player .. " hired " .. GetPlayerName(targetId) ..
                     " | ID: " .. targetId .. " to job: " .. jobName .. " | Grade: " .. grade)
@@ -392,7 +343,7 @@ AddEventHandler('aprts_multijob:server:fireEmployee', function(jobName, charId)
                     TriggerClientEvent("aprts_multijob:client:receiveMyJobs", targetId.source, PlayedJobs[charId])
                     setJob(targetId.source, lastJob, lastGrade, lastLabel)
                 else
-                    MySQL:execute("UPDATE characters SET job = @job, jobgrade = @grade WHERE charidentifier = @charid",
+                    MySQL:execute("UPDATE characters SET job = @job, jobgrade = @grade, joblabel = @label WHERE charidentifier = @charid",
                         {
                             ['@charid'] = charId,
                             ['@job'] = lastJob,
