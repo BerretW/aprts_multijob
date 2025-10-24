@@ -1,4 +1,3 @@
-// ... (začátek souboru a modální okna beze změny) ...
 // Helper funkce pro odesílání dat do Lua
 async function post(eventName, data = {}) {
     try {
@@ -33,6 +32,8 @@ document.addEventListener('keydown', (e) => {
             hideConfirm();
         } else if (!promptModal.classList.contains('hidden')) {
             hidePrompt();
+        } else if (!hireModal.classList.contains('hidden')) { // <-- PŘIDÁNO
+            hideHireModal();
         } else {
             closeNUI();
         }
@@ -94,6 +95,36 @@ promptInput.addEventListener('keydown', (e) => {
     }
 });
 
+// ==========================================================
+// === NOVÁ SEKCE: HIRE (ZADÁNÍ ID HRÁČE) ===
+// ==========================================================
+const hireModal = document.getElementById('hire-modal');
+const hireInput = document.getElementById('hire-input');
+const hireSubmitBtn = document.getElementById('hire-submit-btn');
+const hireCancelBtn = document.getElementById('hire-cancel-btn');
+let hireCallback = null;
+
+function showHireModal(callback) {
+    hireInput.value = '';
+    hireCallback = callback;
+    hireModal.classList.remove('hidden');
+    hireInput.focus();
+}
+function hideHireModal() {
+    hireModal.classList.add('hidden');
+    hireCallback = null;
+}
+hireSubmitBtn.addEventListener('click', () => {
+    if (hireCallback) hireCallback(hireInput.value);
+    hideHireModal();
+});
+hireCancelBtn.addEventListener('click', hideHireModal);
+hireInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        hireSubmitBtn.click();
+    }
+});
+
 
 // ==================== JOB MENU LOGIC ====================
 const myJobsList = document.getElementById('my-jobs-list');
@@ -150,7 +181,6 @@ const employeesList = document.getElementById('employees-list');
 let bossJobName = '';
 
 function populateEmployees(employees, jobName) {
-    // Uložíme si jméno práce pro použití v celém boss menu
     bossJobName = jobName;
     employeesList.innerHTML = '';
 
@@ -218,18 +248,19 @@ function attachBossMenuListeners() {
     });
 }
 
+// ZMĚNA ZDE: Tlačítko nyní volá naši novou funkci showHireModal
 document.getElementById('hire-player-btn').addEventListener('click', () => {
-    // Ujistíme se, že bossJobName není prázdné
     if (!bossJobName) {
         console.error("Chyba: Není definována práce pro nábor!");
         return;
     }
-    showPrompt("Zadejte Player ID nového zaměstnance:", "Player ID", (playerId) => {
+    // Voláme nové, dedikované modální okno
+    showHireModal((playerId) => {
         const id = parseInt(playerId);
         if (id && id > 0) {
             post('hirePlayerById', { 
                 targetId: id,
-                jobName: bossJobName // Použijeme aktuální hodnotu
+                jobName: bossJobName
             });
             closeNUI();
         } else if (playerId !== null && playerId !== '') {
@@ -238,15 +269,29 @@ document.getElementById('hire-player-btn').addEventListener('click', () => {
     });
 });
 
-// ==================== MAIN EVENT LISTENER & DRAG LOGIC (beze změny) ====================
+// ==================== MAIN EVENT LISTENER & DRAG LOGIC ====================
+// ... (tato část zůstává beze změny) ...
 window.addEventListener('message', (event) => {
     const data = event.data;
     if (data.action === 'openMenu') {
         populateMyJobs(data.jobs, data.currentJob, data.currentJobLabel, data.currentGrade);
         const bossSection = document.getElementById('boss-section');
+        const tabButtons = document.querySelectorAll('.tab-button');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(button.dataset.tab + '-tab').classList.remove('hidden');
+            });
+        });
+
         if (data.isBoss) {
             document.getElementById('boss-panel-title').textContent = `Boss Panel (${data.currentJobLabel})`;
-            // Klíčový krok: Aktualizujeme bossJobName při každém otevření menu
             populateEmployees(data.employees, data.currentJob);
             document.querySelector('.tab-button[data-tab="employees"]').click();
             bossSection.classList.remove('hidden');
@@ -256,7 +301,7 @@ window.addEventListener('message', (event) => {
         container.classList.remove('hidden');
     }
 });
-// ... (zbytek kódu pro přetahování okna je stejný)
+
 const header = document.getElementById("main-header");
 let isDragging = false;
 let offsetX, offsetY;

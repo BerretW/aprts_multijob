@@ -39,7 +39,8 @@
                 </div>
 
                 <div id="hire-tab" class="tab-content hidden">
-                     <p>Najměte hráče, který stojí poblíž vás.</p>
+                     <!-- ZMĚNA TEXTU ZDE -->
+                     <p>Zadejte ID hráče, kterého chcete najmout.</p>
                      <button id="hire-player-btn" class="action-btn">Najmout hráče</button>
                 </div>
             </div>
@@ -57,7 +58,7 @@
         </div>
     </div>
 
-    <!-- NOVÉ OKNO PRO ZADÁNÍ HODNOTY (GRADE) -->
+    <!-- OKNO PRO ZADÁNÍ HODNOTY (GRADE) -->
     <div id="prompt-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <p id="prompt-text">Zadejte novou hodnost:</p>
@@ -68,6 +69,21 @@
             </div>
         </div>
     </div>
+
+    <!-- ============================================= -->
+    <!-- === NOVÉ OKNO PRO NÁBOR (ZADÁNÍ ID HRÁČE) === -->
+    <!-- ============================================= -->
+    <div id="hire-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <p id="hire-text">Zadejte Player ID nového zaměstnance:</p>
+            <input type="number" id="hire-input" min="1" placeholder="Player ID">
+            <div class="modal-actions">
+                <button id="hire-submit-btn" class="action-btn">Najmout</button>
+                <button id="hire-cancel-btn" class="action-btn fire-btn">Zrušit</button>
+            </div>
+        </div>
+    </div>
+
 
     <script src="script.js"></script>
 </body>
