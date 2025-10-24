@@ -8,6 +8,8 @@ Config.ServerName = 'WestHaven ** Loger'
 Config.DiscordColor = 16753920
 
 
+Config.AdminGroup = "admin" -- Název VORP skupiny, která bude mít přístup k admin panelu
+
 Config.DefaultJobID = 1 --id of the job which will be set to player on first join (unemployed by default)
 Config.DefaultJobGrade = 1 --grade of the job which will be set to player on first join (0 by default)
 Config.DefaultJobLabel = "nezaměstnaný" --name of the grade which will be set to player on first join (unemployed by default)

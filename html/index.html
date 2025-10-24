@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Správa Zaměstnání</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin_style.css"> <!-- PŘIDÁNO -->
     <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -70,9 +71,6 @@
         </div>
     </div>
 
-    <!-- ============================================= -->
-    <!-- === NOVÉ OKNO PRO NÁBOR (ZADÁNÍ ID HRÁČE) === -->
-    <!-- ============================================= -->
     <div id="hire-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <p id="hire-text">Zadejte Player ID nového zaměstnance:</p>
@@ -84,7 +82,31 @@
         </div>
     </div>
 
-
+ <div id="job-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h2 id="job-modal-title">Editovat Práci</h2>
+            <!-- Skrytý input pro ID práce -->
+            <input type="hidden" id="job-id-input">
+            
+            <div class="form-group">
+                <label for="job-name-input">Název práce (interní, bez diakritiky, např. 'police')</label>
+                <input type="text" id="job-name-input" placeholder="police">
+            </div>
+            <div class="form-group">
+                <label for="job-label-input">Popisek práce (zobrazovaný název, např. 'Policie')</label>
+                <input type="text" id="job-label-input" placeholder="Policie">
+            </div>
+            <div class="form-group">
+                <label for="job-boss-input">Požadovaná hodnost pro Boss Menu</label>
+                <input type="number" id="job-boss-input" min="0" value="5">
+            </div>
+            
+            <div class="modal-actions">
+                <button id="job-save-btn" class="action-btn">Uložit</button>
+                <button id="job-cancel-btn" class="action-btn fire-btn">Zrušit</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

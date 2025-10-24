@@ -3,8 +3,8 @@ lua54 'yes'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 
 author 'SpoiledMouse'
-version '1.2'
-description 'aprts_multijob with NUI'
+version '1.3'
+description 'aprts_multijob with NUI and Admin Panel'
 
 games {"rdr3"}
 
@@ -13,18 +13,21 @@ ui_page 'html/index.html'
 files {
     'html/index.html',
     'html/style.css',
-    'html/script.js'
+    'html/script.js',
+    -- NOVÉ soubory pro admin panel --
+    'html/admin_style.css'
 }
 
--- Client scripty (menu.lua je nahrazeno nui_handler.lua)
+-- Client scripty
 client_scripts {
     'config.lua',
     'client/client.lua',
     'client/events.lua',
-    'client/nui_handler.lua', -- NOVÝ soubor místo menu.lua
+    'client/nui_handler.lua',
     'client/renderer.lua',
     'client/visualizer.lua',
-    'client/commands.lua'
+    'client/commands.lua',
+    'client/admin.lua' -- NOVÝ soubor
 }
 
 server_scripts {
@@ -33,13 +36,14 @@ server_scripts {
     'server/server.lua',
     'server/events.lua',
     'server/commands.lua',
+    'server/admin.lua', -- NOVÝ soubor
 }
 shared_scripts {
     'config.lua',
-    '@ox_lib/init.lua' -- jo_libs už není potřeba pro UI, ale může být pro jiné funkce, ponechávám
+    '@ox_lib/init.lua'
 }
 
 escrow_ignore {
     'config.lua',
     'html/*'
-  }
+}
