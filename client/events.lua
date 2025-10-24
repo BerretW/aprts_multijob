@@ -12,14 +12,15 @@ RegisterNetEvent("aprts_multijob:client:receiveJobs", function(jobs)
     for k, v in pairs(Jobs) do
         JobsByName[v.name] = v
     end
-    debugPrint("Načteny práce: ")
-    -- print(json.encode(Jobs))
+    debugPrint("Načteny práce.")
+    -- print(json.encode(Jobs)) -- Ponechávám zakomentováno pro případné ladění
 end)
 
 RegisterNetEvent("aprts_multijob:client:receiveMyJobs", function(myJobs)
     MyJobs = myJobs
-    debugPrint("Načteny moje práce: ")
-    print(json.encode(MyJobs))
+    debugPrint("Načteny moje práce.")
+    -- OPRAVA: Odstraněn problematický print, který způsoboval zamrznutí klienta.
+    -- print(json.encode(MyJobs)) 
 end)
 
 RegisterNetEvent("aprts_multijob:client:receivePlayerJobs", function(targetId, jobList)
@@ -31,6 +32,7 @@ end)
 
 RegisterNetEvent("aprts_multijob:client:receiveEmployees", function(employees)
     Employees = employees
-    debugPrint("Načteni zaměstnanci: ")
-    print(json.encode(Employees))
+    debugPrint("Načteni zaměstnanci.")
+    -- OPRAVA: Také zde je lepší tento řádek smazat nebo zakomentovat.
+    -- print(json.encode(Employees))
 end)

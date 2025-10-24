@@ -92,15 +92,16 @@ AddEventHandler('aprts_multijob:server:requestMyJobs', function()
         PlayedJobs[charId] = {}
         return
     end
+    
     for k, v in pairs(PlayedJobs[charId]) do
-
         v.label = Jobs[v.job] and Jobs[v.job].label or "Unknown"
+        -- OPRAVA: Tento řádek chyběl a způsoboval zamrznutí NUI.
+        -- Zajišťuje, že data poslaná klientovi vždy obsahují i interní jméno práce.
+        v.name = Jobs[v.job] and Jobs[v.job].name or "unknown"
         table.insert(myJobs, v)
-
     end
 
     TriggerClientEvent('aprts_multijob:client:receiveMyJobs', player, myJobs)
-    -- print(json.encode(myJobs))
 end)
 
 RegisterServerEvent('aprts_multijob:server:getEmployees')
@@ -169,7 +170,9 @@ AddEventHandler('aprts_multijob:server:quitJob', function(jobName)
     end
     local jobFound = false
     for k, v in pairs(PlayedJobs[charId]) do
-        if v.job == jobId then
+        -- OPRAVA: Podmínka byla změněna z porovnávání ID na porovnávání jména,
+        -- aby byla konzistentní se zbytkem skriptu a spolehlivě fungovala.
+        if v.name == jobName then
             jobFound = true
             table.remove(PlayedJobs[charId], k)
             MySQL:execute("DELETE FROM aprts_jobs_users WHERE charid = @charid AND job = @job", {
